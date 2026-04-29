@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Novel Reader | Preserve Structure Copy | Centered Toolbar</title>
+    <title>Novel Reader | Split & Copy by Character | Paragraph Boundaries</title>
     <style>
         * {
             box-sizing: border-box;
@@ -34,7 +34,7 @@
             padding-bottom: 70px;
         }
         
-        /* DESKTOP TOOLBAR - Centered */
+        /* DESKTOP TOOLBAR */
         .desktop-toolbar {
             display: flex;
             background: #2c2e3a;
@@ -63,7 +63,8 @@
         .desktop-toolbar .clean-bg { background: #2c7a4d; }
         .desktop-toolbar .clean-bg.active { background: #ff6b6b; }
         .desktop-toolbar .copy-btn { background: #4c6a9e; }
-        .desktop-toolbar .copy-btn:hover { background: #5d7db8; }
+        .desktop-toolbar .split-btn { background: #9b59b6; }
+        .desktop-toolbar .split-btn:hover { background: #8e44ad; }
         .desktop-toolbar .chapter-select { 
             background: #1e1f2a; 
             color: white; 
@@ -168,6 +169,7 @@
         .action-btn.clean { background: #2c7a4d; }
         .action-btn.clean.active { background: #ff6b6b; }
         .action-btn.copy { background: #4c6a9e; }
+        .action-btn.split { background: #9b59b6; }
         .chapter-select-mobile {
             background: #1e1f2a;
             color: white;
@@ -209,7 +211,51 @@
         }
         .sheet-overlay.visible { opacity: 1; visibility: visible; }
         
-        /* Toast notification */
+        /* Split Dialog */
+        .split-dialog {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            border-radius: 28px;
+            padding: 1.5rem;
+            z-index: 400;
+            min-width: 300px;
+            max-width: 90%;
+            text-align: center;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+            display: none;
+        }
+        .split-dialog.show { display: block; }
+        .split-dialog h3 { margin: 0 0 0.5rem 0; color: #2c3e66; }
+        .split-dialog p { margin: 0.5rem 0 1rem 0; color: #666; font-size: 0.9rem; line-height: 1.4; }
+        .split-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            margin-top: 0.5rem;
+        }
+        .split-buttons button {
+            background: #4c6a9e;
+            color: white;
+            border: none;
+            border-radius: 40px;
+            padding: 0.6rem 1.5rem;
+            font-size: 1rem;
+            cursor: pointer;
+        }
+        .split-buttons button:active { background: #3a5580; }
+        .split-buttons button.part1 { background: #2c7a4d; }
+        .split-buttons button.part2 { background: #9b59b6; }
+        .split-dialog .close-dialog {
+            margin-top: 1rem;
+            background: #aa3e3e;
+            padding: 0.4rem 1rem;
+            font-size: 0.8rem;
+        }
+        
+        /* Toast */
         .toast {
             position: fixed;
             bottom: 80px;
@@ -261,8 +307,7 @@
             margin-bottom: 0.5rem;
             align-items: center;
         }
-        .import-buttons button, 
-        .import-buttons label {
+        .import-buttons button, .import-buttons label {
             background: #4c6a9e;
             color: white;
             border: none;
@@ -272,8 +317,7 @@
             font-size: 0.75rem;
             white-space: nowrap;
         }
-        .import-buttons button:active, 
-        .import-buttons label:active { background: #3a5580; }
+        .import-buttons button:active, .import-buttons label:active { background: #3a5580; }
         .import-buttons #clearGlossaryBtn { background: #aa3e3e; }
         textarea { 
             width: 100%; 
@@ -307,6 +351,8 @@
             .desktop-toolbar { display: none; }
             .reader-container { padding: 1rem; }
             .toast { bottom: 80px; font-size: 0.75rem; white-space: nowrap; }
+            .split-dialog { min-width: 280px; }
+            .split-buttons button { padding: 0.5rem 1rem; font-size: 0.9rem; }
         }
         @media (min-width: 768px) {
             .mobile-fab, .action-sheet, .sheet-overlay { display: none; }
@@ -327,6 +373,7 @@
     <select id="chapterSelectDesktop" class="chapter-select"></select>
     <button id="nextChapterBtnDesktop">▶</button>
     <button id="copyBtnDesktop" class="copy-btn">📋 Copy</button>
+    <button id="splitCopyBtnDesktop" class="split-btn">✂️ Split & Copy</button>
     <button id="glossaryModalBtnDesktop">✏️ Glossary</button>
     <button id="clearCacheBtnDesktop" class="clear-cache">🗑️ Clear</button>
     <span class="status-badge" id="bookmarkStatusDesktop">📌</span>
@@ -356,6 +403,9 @@
         </div>
         <div class="action-row">
             <button id="copyBtnMobile" class="action-btn copy">📋 Copy</button>
+            <button id="splitCopyBtnMobile" class="action-btn split">✂️ Split</button>
+        </div>
+        <div class="action-row">
             <button id="glossaryModalBtnMobile" class="action-btn">✏️ Glossary</button>
             <button id="clearCacheBtnMobile" class="action-btn danger">🗑️</button>
         </div>
@@ -364,9 +414,20 @@
         </div>
         <hr>
         <div style="font-size:0.7rem; text-align:center; color:#aaa;">
-            Novel auto-saves • Tap outside to close
+            Novel auto-saves • Split by paragraph boundaries
         </div>
     </div>
+</div>
+
+<!-- Split Dialog -->
+<div id="splitDialog" class="split-dialog">
+    <h3>✂️ Split Chapter</h3>
+    <p id="splitInfo"></p>
+    <div class="split-buttons">
+        <button id="copyPart1Btn" class="part1">📋 Part 1</button>
+        <button id="copyPart2Btn" class="part2">📋 Part 2</button>
+    </div>
+    <button id="closeDialogBtn" class="close-dialog">Cancel</button>
 </div>
 
 <!-- Main Reading Area -->
@@ -375,13 +436,13 @@
         <div style="text-align: center; padding: 2rem; color: #888;">
             📚 Load HTML file<br>
             ✅ Auto-saves & reloads<br>
-            ✅ Preserves all styling
+            ✅ Split by paragraph (never cuts in the middle)
         </div>
     </div>
 </div>
 
 <!-- Toast Notification -->
-<div id="toast" class="toast">📋 Copied to clipboard!</div>
+<div id="toast" class="toast">📋 Copied!</div>
 
 <div class="loading-indicator" id="loadingIndicator">📖 Loading...</div>
 
@@ -417,6 +478,8 @@ OR text: word=replacement (one per line)'></textarea>
     let globalStylesCache = "";
     let chapterSplitRegex = "\\d+\\s*화[\\s\\.\\:]*.*?(\\(\\d+\\)|$)";
     let removeWhiteBgFlag = false;
+    let splitPart1Text = "";
+    let splitPart2Text = "";
     
     const STORAGE_KEYS = {
         NOVEL_DATA: 'saved_novel_data',
@@ -431,40 +494,29 @@ OR text: word=replacement (one per line)'></textarea>
     // Toast notification
     function showToast(message) {
         const toast = document.getElementById('toast');
-        toast.textContent = message || '📋 Copied to clipboard!';
+        toast.textContent = message || '📋 Copied!';
         toast.classList.add('show');
         setTimeout(() => {
             toast.classList.remove('show');
         }, 2000);
     }
     
-    // Copy current chapter text with preserved structure (paragraphs, line breaks)
-    async function copyCurrentChapterText() {
-        if (!chapters.length) {
-            showToast('❌ No chapter loaded');
-            return;
-        }
+    // Get formatted text from current chapter (preserves paragraph structure)
+    function getFormattedChapterText() {
+        if (!chapters.length) return "";
         
         const readerContent = document.getElementById('reader-content');
-        if (!readerContent) {
-            showToast('❌ Nothing to copy');
-            return;
-        }
+        if (!readerContent) return "";
         
-        // Clone to avoid modifying the actual display
         const clone = readerContent.cloneNode(true);
-        
-        // Remove style tags
         clone.querySelectorAll('style').forEach(style => style.remove());
         
-        // Function to extract formatted text preserving structure
         function extractFormattedText(element) {
             let result = [];
             
             function processNode(node) {
                 if (node.nodeType === Node.TEXT_NODE) {
                     let text = node.textContent;
-                    // Clean up multiple spaces but preserve intentional spacing
                     text = text.replace(/[ \t]+/g, ' ');
                     if (text.trim()) {
                         result.push(text);
@@ -473,40 +525,28 @@ OR text: word=replacement (one per line)'></textarea>
                 }
                 
                 const tagName = node.tagName ? node.tagName.toLowerCase() : '';
-                
-                // Handle block elements - add newlines
-                const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote', 'pre'];
+                const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'];
                 const isBlock = blockTags.includes(tagName);
                 
-                // Special handling for headings
                 if (tagName.match(/^h[1-6]$/)) {
                     if (result.length > 0 && result[result.length - 1] !== '') {
-                        result.push(''); // blank line before heading
+                        result.push('');
                     }
                 }
                 
-                // Process children
                 node.childNodes.forEach(child => processNode(child));
                 
                 if (isBlock) {
-                    // Ensure newline after block elements
                     if (result.length > 0 && result[result.length - 1] !== '') {
                         result.push('');
                     }
                 } else if (tagName === 'br') {
-                    // Line break
                     result.push('');
-                } else if (tagName === 'span' && node.className && node.className.includes('c32')) {
-                    // This might be a chapter marker - ensure spacing
-                    if (result.length > 0 && result[result.length - 1] !== '') {
-                        result.push('');
-                    }
                 }
             }
             
             processNode(element);
             
-            // Clean up the result: remove consecutive empty lines (more than 2)
             let cleaned = [];
             let emptyCount = 0;
             for (let line of result) {
@@ -520,36 +560,193 @@ OR text: word=replacement (one per line)'></textarea>
                     cleaned.push(line);
                 }
             }
-            
-            // Trim trailing empty lines
             while (cleaned.length > 0 && cleaned[cleaned.length - 1] === '') {
                 cleaned.pop();
             }
-            
             return cleaned.join('\n').trim();
         }
         
-        const formattedText = extractFormattedText(clone);
+        return extractFormattedText(clone);
+    }
+    
+    // Split text into two parts at paragraph boundaries (never cut inside a paragraph)
+    function splitTextAtParagraphBoundary(text) {
+        if (!text) return ["", ""];
         
-        if (!formattedText || formattedText.length === 0) {
+        // Split by double newlines (paragraph boundaries)
+        const paragraphs = text.split(/\n\s*\n/);
+        
+        if (paragraphs.length <= 1) {
+            // If only one paragraph, fall back to sentence boundary
+            return splitTextAtSentenceBoundary(text);
+        }
+        
+        // Calculate total characters
+        const totalChars = text.length;
+        const targetChars = totalChars / 2;
+        
+        // Find the best paragraph to split at
+        let accumulatedChars = 0;
+        let bestSplitIndex = 0;
+        let bestDistance = Infinity;
+        
+        for (let i = 0; i < paragraphs.length; i++) {
+            const paraChars = paragraphs[i].length;
+            const distance = Math.abs(accumulatedChars + paraChars - targetChars);
+            
+            if (distance < bestDistance) {
+                bestDistance = distance;
+                bestSplitIndex = i + 1; // Split after this paragraph
+            }
+            
+            accumulatedChars += paraChars + 2; // +2 for the \n\n separator
+        }
+        
+        // Ensure we don't split at the very beginning or end
+        if (bestSplitIndex <= 0) bestSplitIndex = 1;
+        if (bestSplitIndex >= paragraphs.length) bestSplitIndex = paragraphs.length - 1;
+        
+        // Build parts
+        const part1Paragraphs = paragraphs.slice(0, bestSplitIndex);
+        const part2Paragraphs = paragraphs.slice(bestSplitIndex);
+        
+        const part1 = part1Paragraphs.join('\n\n').trim();
+        const part2 = part2Paragraphs.join('\n\n').trim();
+        
+        return [part1, part2];
+    }
+    
+    // Fallback: split at sentence boundaries (only used if no paragraph breaks)
+    function splitTextAtSentenceBoundary(text) {
+        if (!text) return ["", ""];
+        
+        const totalChars = text.length;
+        const targetChars = totalChars / 2;
+        
+        // Look for sentence boundaries around the target
+        const sentenceEndChars = ['.', '!', '?', '。', '！', '？'];
+        let bestSplit = totalChars;
+        let bestDistance = Infinity;
+        
+        // Search within 20% of length around target
+        const searchStart = Math.max(0, targetChars - totalChars * 0.1);
+        const searchEnd = Math.min(totalChars, targetChars + totalChars * 0.1);
+        
+        for (let i = searchStart; i < searchEnd; i++) {
+            if (sentenceEndChars.includes(text[i]) && i + 1 < totalChars) {
+                // Check if it's followed by space or newline
+                const nextChar = text[i + 1];
+                if (nextChar === ' ' || nextChar === '\n' || nextChar === '\r') {
+                    const distance = Math.abs(i + 2 - targetChars);
+                    if (distance < bestDistance) {
+                        bestDistance = distance;
+                        bestSplit = i + 2;
+                    }
+                }
+            }
+        }
+        
+        // If no good boundary found, split at space
+        if (bestDistance === Infinity) {
+            for (let i = targetChars; i < Math.min(totalChars, targetChars + 200); i++) {
+                if (text[i] === ' ') {
+                    bestSplit = i + 1;
+                    break;
+                }
+            }
+        }
+        
+        const part1 = text.substring(0, bestSplit).trim();
+        const part2 = text.substring(bestSplit).trim();
+        
+        return [part1, part2];
+    }
+    
+    // Format number with commas
+    function formatNumber(num) {
+        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+    
+    // Show split dialog
+    function showSplitDialog() {
+        if (!chapters.length) {
+            showToast('❌ No chapter loaded');
+            return;
+        }
+        
+        const fullText = getFormattedChapterText();
+        if (!fullText) {
+            showToast('❌ No text to split');
+            return;
+        }
+        
+        const [part1, part2] = splitTextAtParagraphBoundary(fullText);
+        splitPart1Text = part1;
+        splitPart2Text = part2;
+        
+        const charCount1 = part1.length;
+        const charCount2 = part2.length;
+        const totalChars = fullText.length;
+        const percent1 = Math.round((charCount1 / totalChars) * 100);
+        const percent2 = Math.round((charCount2 / totalChars) * 100);
+        
+        const dialog = document.getElementById('splitDialog');
+        const info = document.getElementById('splitInfo');
+        info.innerHTML = `📊 Total: ${formatNumber(totalChars)} characters<br>📖 Part 1: ${formatNumber(charCount1)} chars (${percent1}%) &nbsp;|&nbsp; 📖 Part 2: ${formatNumber(charCount2)} chars (${percent2}%)<br>✂️ Split between paragraphs - no cut in middle`;
+        dialog.classList.add('show');
+    }
+    
+    async function copySplitPart(partNumber) {
+        const text = partNumber === 1 ? splitPart1Text : splitPart2Text;
+        if (!text) {
+            showToast('❌ No text to copy');
+            return;
+        }
+        
+        try {
+            await navigator.clipboard.writeText(text);
+            const charCount = text.length;
+            showToast(`📋 Part ${partNumber} copied (${formatNumber(charCount)} chars)`);
+            document.getElementById('splitDialog').classList.remove('show');
+        } catch (err) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            document.body.appendChild(textarea);
+            textarea.select();
+            document.execCommand('copy');
+            document.body.removeChild(textarea);
+            const charCount = text.length;
+            showToast(`📋 Part ${partNumber} copied (${formatNumber(charCount)} chars)`);
+            document.getElementById('splitDialog').classList.remove('show');
+        }
+    }
+    
+    // Copy full chapter (preserves structure)
+    async function copyFullChapter() {
+        if (!chapters.length) {
+            showToast('❌ No chapter loaded');
+            return;
+        }
+        
+        const formattedText = getFormattedChapterText();
+        if (!formattedText) {
             showToast('❌ No text to copy');
             return;
         }
         
         try {
             await navigator.clipboard.writeText(formattedText);
-            const wordCount = formattedText.split(/\s+/).length;
-            showToast(`📋 Copied ${wordCount} words with structure preserved!`);
+            const charCount = formattedText.length;
+            showToast(`📋 Copied ${formatNumber(charCount)} characters`);
         } catch (err) {
-            // Fallback for older browsers
             const textarea = document.createElement('textarea');
             textarea.value = formattedText;
             document.body.appendChild(textarea);
             textarea.select();
             document.execCommand('copy');
             document.body.removeChild(textarea);
-            const wordCount = formattedText.split(/\s+/).length;
-            showToast(`📋 Copied ${wordCount} words!`);
+            const charCount = formattedText.length;
+            showToast(`📋 Copied ${formatNumber(charCount)} characters`);
         }
     }
     
@@ -588,25 +785,16 @@ OR text: word=replacement (one per line)'></textarea>
         } catch(e) { return false; }
     }
     
-    // Clean white background flag persistence
-    function saveCleanBgFlag() {
-        localStorage.setItem(STORAGE_KEYS.CLEAN_BG_FLAG, removeWhiteBgFlag ? 'true' : 'false');
-    }
-    
+    // Clean white background flag
+    function saveCleanBgFlag() { localStorage.setItem(STORAGE_KEYS.CLEAN_BG_FLAG, removeWhiteBgFlag ? 'true' : 'false'); }
     function loadCleanBgFlag() {
         const saved = localStorage.getItem(STORAGE_KEYS.CLEAN_BG_FLAG);
-        if (saved !== null) {
-            removeWhiteBgFlag = saved === 'true';
-        } else {
-            removeWhiteBgFlag = false;
-        }
+        removeWhiteBgFlag = saved === 'true';
         updateCleanBgButtons();
     }
-    
     function updateCleanBgButtons() {
         const desktopBtn = document.getElementById('cleanWhiteBgBtnDesktop');
         const mobileBtn = document.getElementById('cleanWhiteBgBtnMobile');
-        
         if (desktopBtn) {
             if (removeWhiteBgFlag) {
                 desktopBtn.classList.add('active');
@@ -630,50 +818,25 @@ OR text: word=replacement (one per line)'></textarea>
     // White background remover
     function cleanWhiteBackgrounds(htmlString) {
         if (!removeWhiteBgFlag) return htmlString;
-        
         let cleanedHtml = htmlString.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, cssContent) => {
             let cleanedCss = cssContent;
             cleanedCss = cleanedCss.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|#FFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
             cleanedCss = cleanedCss.replace(/background\s*:\s*(white|#fff|#ffffff|#FFFFFF|#FFF)\s*;?\s*/gi, '');
-            cleanedCss = cleanedCss.replace(/background\s*:\s*[^;]*?(white|#fff|#ffffff|#FFFFFF)[^;]*?;?/gi, (bgMatch) => {
-                return bgMatch.replace(/(white|#fff|#ffffff|#FFFFFF)/gi, '').replace(/;\s*;/, ';').trim();
-            });
-            cleanedCss = cleanedCss.replace(/;\s*;/g, ';');
             return `<style${attrs}>${cleanedCss}</style>`;
         });
-        
         const parser = new DOMParser();
         const doc = parser.parseFromString(cleanedHtml, 'text/html');
-        const whitePatterns = [
-            /background-color:\s*#ffffff\b/gi,
-            /background-color:\s*#fff\b/gi,
-            /background-color:\s*white\b/gi,
-            /background-color:\s*rgb\(\s*255\s*,\s*255\s*,\s*255\s*\)/gi,
-            /background:\s*#ffffff\b/gi,
-            /background:\s*#fff\b/gi,
-            /background:\s*white\b/gi
-        ];
-        
+        const whitePatterns = [/background-color:\s*#ffffff\b/gi, /background-color:\s*#fff\b/gi, /background-color:\s*white\b/gi, /background:\s*#ffffff\b/gi, /background:\s*#fff\b/gi, /background:\s*white\b/gi];
         doc.body.querySelectorAll('*').forEach(el => {
             const styleAttr = el.getAttribute('style');
             if (styleAttr) {
                 let newStyle = styleAttr;
                 whitePatterns.forEach(p => { newStyle = newStyle.replace(p, ''); });
                 newStyle = newStyle.replace(/;;/g, ';').trim();
-                if (newStyle === '' || newStyle === ';') {
-                    el.removeAttribute('style');
-                } else {
-                    el.setAttribute('style', newStyle);
-                }
-            }
-            if (el.hasAttribute('bgcolor')) {
-                const bg = el.getAttribute('bgcolor').toLowerCase();
-                if (bg === 'white' || bg === '#fff' || bg === '#ffffff') {
-                    el.removeAttribute('bgcolor');
-                }
+                if (newStyle === '' || newStyle === ';') el.removeAttribute('style');
+                else el.setAttribute('style', newStyle);
             }
         });
-        
         return doc.body.innerHTML;
     }
     
@@ -681,8 +844,7 @@ OR text: word=replacement (one per line)'></textarea>
         let cleanedHtml = htmlString;
         if (removeWhiteBgFlag) {
             cleanedHtml = htmlString.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, cssContent) => {
-                let cleanedCss = cssContent;
-                cleanedCss = cleanedCss.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
+                let cleanedCss = cssContent.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
                 cleanedCss = cleanedCss.replace(/background\s*:\s*(white|#fff|#ffffff|#FFFFFF)\s*;?\s*/gi, '');
                 return `<style${attrs}>${cleanedCss}</style>`;
             });
@@ -766,17 +928,11 @@ OR text: word=replacement (one per line)'></textarea>
         }
         const chapter = chapters[currentChapterIdx];
         let contentWithGlossary = applyGlossaryToHtml(chapter.originalHtml);
-        
-        if (removeWhiteBgFlag) {
-            contentWithGlossary = cleanWhiteBackgrounds(`<div>${contentWithGlossary}</div>`);
-        }
-        
+        if (removeWhiteBgFlag) contentWithGlossary = cleanWhiteBackgrounds(`<div>${contentWithGlossary}</div>`);
         let stylesToUse = globalStylesCache;
         if (removeWhiteBgFlag && stylesToUse) {
             stylesToUse = stylesToUse.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
-            stylesToUse = stylesToUse.replace(/background\s*:\s*(white|#fff|#ffffff|#FFFFFF)\s*;?\s*/gi, '');
         }
-        
         document.getElementById('reader-content').innerHTML = `<style>${stylesToUse}</style><div class="novel-chapter-content">${contentWithGlossary}</div>`;
         updateSelectors();
         if (restoreScroll && currentBookmark && currentBookmark.chapterIdx === currentChapterIdx) {
@@ -789,10 +945,8 @@ OR text: word=replacement (one per line)'></textarea>
     
     function updateSelectors() {
         const options = chapters.map((ch, idx) => `<option value="${idx}" ${idx === currentChapterIdx ? 'selected' : ''}>${ch.title || `Ch ${idx+1}`}</option>`).join('');
-        const desktopSelect = document.getElementById('chapterSelectDesktop');
-        const mobileSelect = document.getElementById('chapterSelectMobile');
-        if (desktopSelect) desktopSelect.innerHTML = options;
-        if (mobileSelect) mobileSelect.innerHTML = options;
+        if (document.getElementById('chapterSelectDesktop')) document.getElementById('chapterSelectDesktop').innerHTML = options;
+        if (document.getElementById('chapterSelectMobile')) document.getElementById('chapterSelectMobile').innerHTML = options;
     }
     
     let scrollTimeout = null;
@@ -816,10 +970,8 @@ OR text: word=replacement (one per line)'></textarea>
     
     function updateStatus() {
         const text = (currentBookmark && chapters.length) ? `🔖 ${currentBookmark.chapterIdx+1}/${chapters.length}` : (chapters.length ? `📖 ${chapters.length}ch` : `📌`);
-        const desktopStatus = document.getElementById('bookmarkStatusDesktop');
-        const mobileStatus = document.getElementById('bookmarkStatusMobile');
-        if (desktopStatus) desktopStatus.innerText = text;
-        if (mobileStatus) mobileStatus.innerText = text;
+        if (document.getElementById('bookmarkStatusDesktop')) document.getElementById('bookmarkStatusDesktop').innerText = text;
+        if (document.getElementById('bookmarkStatusMobile')) document.getElementById('bookmarkStatusMobile').innerText = text;
     }
     
     function loadBookmark() {
@@ -859,33 +1011,17 @@ OR text: word=replacement (one per line)'></textarea>
         });
     }
     
-    function loadSavedNovel() {
-        if (loadNovelFromStorage() && chapters.length) {
-            loadBookmark();
-        }
-    }
-    
-    function toggleWhiteBgClean() {
-        removeWhiteBgFlag = !removeWhiteBgFlag;
-        saveCleanBgFlag();
-        updateCleanBgButtons();
-        if (chapters.length) {
-            renderCurrentChapter(true);
-        }
-    }
+    function loadSavedNovel() { if (loadNovelFromStorage() && chapters.length) loadBookmark(); }
+    function toggleWhiteBgClean() { removeWhiteBgFlag = !removeWhiteBgFlag; saveCleanBgFlag(); updateCleanBgButtons(); if (chapters.length) renderCurrentChapter(true); }
     
     // Glossary functions
-    function saveGlossary() {
-        localStorage.setItem(STORAGE_KEYS.GLOSSARY, JSON.stringify(glossary.map(g => ({ find: g.find, replace: g.replace, isRegex: g.isRegex }))));
-    }
+    function saveGlossary() { localStorage.setItem(STORAGE_KEYS.GLOSSARY, JSON.stringify(glossary.map(g => ({ find: g.find, replace: g.replace, isRegex: g.isRegex })))); }
     function loadGlossary() {
         const raw = localStorage.getItem(STORAGE_KEYS.GLOSSARY);
         if (raw) try { glossary = JSON.parse(raw).map(g => ({ find: g.find, replace: g.replace, isRegex: g.isRegex })); } catch(e) { glossary = []; }
         renderGlossaryUI();
     }
-    function clearAllGlossary() {
-        if (confirm("Clear all rules?")) { glossary = []; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); alert("✅ Cleared"); }
-    }
+    function clearAllGlossary() { if (confirm("Clear all rules?")) { glossary = []; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); alert("✅ Cleared"); } }
     function renderGlossaryUI() {
         const container = document.getElementById('glossaryEntriesContainer');
         if (!container) return;
@@ -921,25 +1057,26 @@ OR text: word=replacement (one per line)'></textarea>
         if (newGlossary.length) { glossary = newGlossary; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); alert(`✅ ${newGlossary.length} imported`); return true; }
         alert("No valid pairs"); return false;
     }
-    function clearCache() {
-        if (confirm("Clear all data? This will delete your novel, bookmarks, and glossary.")) {
-            localStorage.clear();
-            location.reload();
-        }
-    }
+    function clearCache() { if (confirm("Clear all data?")) { localStorage.clear(); location.reload(); } }
     
-    // Event binding helper
+    // Event binding
     function bind(id, event, handler) { const el = document.getElementById(id); if(el) el.addEventListener(event, handler); }
     
-    // Initialize
     window.onload = () => {
         loadCleanBgFlag();
         loadGlossary();
         loadSavedNovel();
         
         // Copy buttons
-        bind('copyBtnDesktop', 'click', copyCurrentChapterText);
-        bind('copyBtnMobile', 'click', () => { copyCurrentChapterText(); closeSheet(); });
+        bind('copyBtnDesktop', 'click', copyFullChapter);
+        bind('copyBtnMobile', 'click', () => { copyFullChapter(); closeSheet(); });
+        bind('splitCopyBtnDesktop', 'click', showSplitDialog);
+        bind('splitCopyBtnMobile', 'click', () => { showSplitDialog(); closeSheet(); });
+        
+        // Split dialog buttons
+        bind('copyPart1Btn', 'click', () => copySplitPart(1));
+        bind('copyPart2Btn', 'click', () => copySplitPart(2));
+        bind('closeDialogBtn', 'click', () => document.getElementById('splitDialog').classList.remove('show'));
         
         // Mobile sheet
         bind('fabBtn', 'click', openSheet);
@@ -978,6 +1115,13 @@ OR text: word=replacement (one per line)'></textarea>
         bind('pasteTextBtn', 'click', () => { const val = document.getElementById('jsonPasteArea').value; if(val) importTextPairs(val); else alert("Paste text"); });
         bind('jsonFileUpload', 'change', (e) => { if(e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => importJson(ev.target.result); reader.readAsText(e.target.files[0]); e.target.value = ''; } });
         bind('txtFileUpload', 'change', (e) => { if(e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => importTextPairs(ev.target.result); reader.readAsText(e.target.files[0]); e.target.value = ''; } });
+        
+        // Close dialog when clicking outside
+        document.getElementById('splitDialog').addEventListener('click', (e) => {
+            if (e.target === document.getElementById('splitDialog')) {
+                document.getElementById('splitDialog').classList.remove('show');
+            }
+        });
     };
 </script>
 </body>
