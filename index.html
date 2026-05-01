@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Novel Reader | HTML | Dark Mode Fixed | Bookmark Restore</title>
+    <title>Novel Reader | HTML | Fixed Copy with Paragraphs | Dark Mode</title>
     <style>
         * {
             box-sizing: border-box;
@@ -86,34 +86,15 @@
             word-wrap: break-word;
         }
         
-        /* DARK MODE TEXT COLOR FIX - regular text becomes white, colored elements keep their colors */
+        /* DARK MODE TEXT COLOR FIX */
         body.dark #reader-content {
             color: #ffffff !important;
         }
         
-        /* Make all text white by default in dark mode */
         body.dark #reader-content * {
             color: #ffffff !important;
         }
         
-        /* BUT preserve elements that have specific colors (highlights, links, etc.) */
-        body.dark #reader-content span[style*="color"] {
-            color: inherit !important;
-        }
-        
-        body.dark #reader-content .highlight,
-        body.dark #reader-content mark,
-        body.dark #reader-content em,
-        body.dark #reader-content strong {
-            color: inherit !important;
-        }
-        
-        /* Special handling for colored spans - keep their original color */
-        body.dark #reader-content [style*="color:"] {
-            color: inherit !important;
-        }
-        
-        /* Headings in dark mode */
         body.dark #reader-content h1,
         body.dark #reader-content h2,
         body.dark #reader-content h3,
@@ -123,7 +104,6 @@
             color: #ffd93d !important;
         }
         
-        /* Links in dark mode */
         body.dark #reader-content a {
             color: #6c5ce7 !important;
         }
@@ -456,7 +436,7 @@
     let currentFileName = null;
     let removeWhiteBgFlag = false;
     
-    // Storage keys - ONLY for bookmark (tiny data!)
+    // Storage keys
     const BOOKMARK_KEY = 'htmlNovelBookmark';
     const SETTINGS_KEY = 'htmlNovelSettings';
     const GLOSSARY_KEY = 'htmlNovelGlossary';
@@ -472,7 +452,6 @@
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         const btns = document.querySelectorAll('#darkModeBtnDesktop, #darkModeBtnMobile');
         btns.forEach(btn => { if(btn) btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark'; });
-        // Force re-render to apply dark mode colors
         if (chapters.length) renderCurrentChapter(true);
     }
     
@@ -485,7 +464,7 @@
         }
     }
     
-    // ============= BOOKMARK (stores ONLY position, NOT the novel) =============
+    // ============= BOOKMARK =============
     function saveBookmark() {
         if (!chapters.length || !currentFileName) return;
         const scrollY = document.querySelector('.reader-container')?.scrollTop || 0;
@@ -497,20 +476,15 @@
         };
         localStorage.setItem(BOOKMARK_KEY, JSON.stringify(bookmark));
         updateStatus();
-        console.log("Bookmark saved:", currentFileName, "chapter", currentChapterIdx);
     }
     
     function getSavedBookmark() {
         const saved = localStorage.getItem(BOOKMARK_KEY);
         if (!saved) return null;
-        try {
-            return JSON.parse(saved);
-        } catch(e) { return null; }
+        try { return JSON.parse(saved); } catch(e) { return null; }
     }
     
-    function clearBookmark() {
-        localStorage.removeItem(BOOKMARK_KEY);
-    }
+    function clearBookmark() { localStorage.removeItem(BOOKMARK_KEY); }
     
     // ============= CLEAN WHITE BG =============
     function saveCleanBgFlag() { localStorage.setItem(CLEAN_BG_KEY, removeWhiteBgFlag ? 'true' : 'false'); }
@@ -685,7 +659,6 @@
             stylesToUse = stylesToUse.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
         }
         
-        // In dark mode, we also need to ensure the content container has white text
         const isDarkMode = document.body.classList.contains('dark');
         const darkModeStyle = isDarkMode ? '<style>#reader-content, #reader-content * { color: #ffffff !important; } #reader-content h1, #reader-content h2, #reader-content h3, #reader-content h4, #reader-content h5, #reader-content h6 { color: #ffd93d !important; } #reader-content a { color: #6c5ce7 !important; }</style>' : '';
         
@@ -738,14 +711,89 @@
         if (mobileStatus) mobileStatus.innerText = text;
     }
     
-    // ============= COPY & SPLIT =============
+    // ============= COPY & SPLIT - FIXED TO PRESERVE PARAGRAPH STRUCTURE =============
     function getFormattedChapterText() {
         if (!chapters.length) return "";
-        const readerContent = document.getElementById('reader-content');
-        if (!readerContent) return "";
-        const clone = readerContent.cloneNode(true);
+        
+        // Get the current chapter content div
+        const contentDiv = document.getElementById('reader-content');
+        if (!contentDiv) return "";
+        
+        // Clone to avoid modifying the display
+        const clone = contentDiv.cloneNode(true);
+        
+        // Remove all style tags
         clone.querySelectorAll('style').forEach(style => style.remove());
-        return clone.textContent || clone.innerText || "";
+        
+        // Function to extract text with preserved line breaks and paragraph structure
+        function extractPreservedText(element) {
+            let result = [];
+            
+            function processNode(node) {
+                if (node.nodeType === Node.TEXT_NODE) {
+                    let text = node.textContent;
+                    // Trim excessive whitespace but preserve intentional spaces
+                    text = text.replace(/[ \t]+/g, ' ');
+                    if (text.trim()) {
+                        result.push(text);
+                    }
+                    return;
+                }
+                
+                const tagName = node.tagName ? node.tagName.toLowerCase() : '';
+                
+                // Block elements that should create new paragraphs
+                const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'];
+                const isBlock = blockTags.includes(tagName);
+                
+                // Handle headings - add blank lines before and after
+                if (tagName.match(/^h[1-6]$/)) {
+                    if (result.length > 0 && result[result.length - 1] !== '') {
+                        result.push(''); // blank line before heading
+                    }
+                }
+                
+                // Process children
+                node.childNodes.forEach(child => processNode(child));
+                
+                // After processing children, add appropriate line breaks
+                if (isBlock) {
+                    // Add blank line after block elements
+                    if (result.length > 0 && result[result.length - 1] !== '') {
+                        result.push('');
+                    }
+                } else if (tagName === 'br') {
+                    // Line break - add empty line
+                    result.push('');
+                }
+            }
+            
+            processNode(clone);
+            
+            // Clean up consecutive empty lines (keep at most 2)
+            let cleaned = [];
+            let emptyCount = 0;
+            for (let line of result) {
+                if (line === '' || line.trim() === '') {
+                    emptyCount++;
+                    if (emptyCount <= 2) {
+                        cleaned.push('');
+                    }
+                } else {
+                    emptyCount = 0;
+                    cleaned.push(line);
+                }
+            }
+            
+            // Trim trailing empty lines
+            while (cleaned.length > 0 && cleaned[cleaned.length - 1] === '') {
+                cleaned.pop();
+            }
+            
+            return cleaned.join('\n').trim();
+        }
+        
+        return extractPreservedText(clone);
     }
     
     function splitTextAtParagraphBoundary(text) {
@@ -796,7 +844,9 @@
         if (!text) return;
         try {
             await navigator.clipboard.writeText(text);
-            showToast(`📋 Copied ${formatNumber(text.length)} chars`);
+            const paraCount = text.split(/\n\s*\n/).length;
+            const charCount = text.length;
+            showToast(`📋 Copied ${formatNumber(charCount)} chars, ${paraCount} paragraphs`);
         } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast(`📋 Copied`); }
     }
     
@@ -808,7 +858,6 @@
         }
         
         const fileName = file.name;
-        
         showLoading(`📖 Loading ${fileName}...`);
         
         return new Promise((resolve, reject) => {
@@ -822,7 +871,6 @@
                 chapters = split;
                 currentFileName = fileName;
                 
-                // Check for saved bookmark for this file
                 const bookmark = getSavedBookmark();
                 if (bookmark && bookmark.fileName === fileName && bookmark.chapterIdx < chapters.length) {
                     currentChapterIdx = bookmark.chapterIdx;
@@ -912,7 +960,7 @@
     
     // ============= INIT =============
     window.onload = async () => {
-        console.log("Page loaded - Bookmark-only mode (no storage limits)");
+        console.log("Page loaded - Bookmark-only mode");
         loadDarkModePreference();
         loadCleanBgFlag();
         loadGlossary();
@@ -922,7 +970,6 @@
         
         await renderCurrentChapter(false);
         
-        // Bind events
         bind('darkModeBtnDesktop', 'click', toggleDarkMode);
         bind('darkModeBtnMobile', 'click', toggleDarkMode);
         bind('copyBtnDesktop', 'click', copyFullChapter);
