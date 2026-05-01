@@ -3,53 +3,107 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Novel Reader | Split & Copy by Character | Paragraph Boundaries</title>
+    <title>Novel Reader | Large HTML Files | Bookmark Restore</title>
     <style>
         * {
             box-sizing: border-box;
             -webkit-tap-highlight-color: transparent;
         }
+        
+        /* Light Mode (default) */
+        :root {
+            --bg-body: #f5f2e8;
+            --bg-reader: #fef9ef;
+            --text-color: #1a1a1a;
+            --toolbar-bg: #2c2e3a;
+            --toolbar-button: #3e4050;
+            --toolbar-button-hover: #ffb347;
+            --border-color: #ffb347;
+            --chapter-select-bg: #1e1f2a;
+            --status-bg: #1e1f2a;
+            --copy-btn: #4c6a9e;
+            --split-btn: #9b59b6;
+            --danger-btn: #aa3e3e;
+            --success-btn: #2c7a4d;
+            --toast-bg: #2c7a4d;
+            --modal-bg: white;
+            --modal-text: #2c3e66;
+            --input-border: #ccc;
+            --import-bg: #f5f5f5;
+        }
+        
+        /* Dark Mode */
+        body.dark {
+            --bg-body: #1a1a2e;
+            --bg-reader: #16213e;
+            --text-color: #ffffff;
+            --toolbar-bg: #0f0f1a;
+            --toolbar-button: #2a2a3a;
+            --toolbar-button-hover: #ffb347;
+            --border-color: #ffb347;
+            --chapter-select-bg: #0a0a12;
+            --status-bg: #0a0a12;
+            --copy-btn: #3a5a7e;
+            --split-btn: #7e3a9e;
+            --danger-btn: #8a2e2e;
+            --success-btn: #1c5a3d;
+            --toast-bg: #1c5a3d;
+            --modal-bg: #1e1e2e;
+            --modal-text: #ffd93d;
+            --input-border: #444;
+            --import-bg: #252535;
+        }
+        
         body {
             font-family: system-ui, 'Segoe UI', 'Roboto', sans-serif;
-            background: #f5f2e8;
+            background: var(--bg-body);
             margin: 0;
             padding: 0;
             display: flex;
             flex-direction: column;
             height: 100vh;
             overflow: hidden;
-            position: relative;
+            transition: background 0.3s, color 0.3s;
+            color: var(--text-color);
         }
         
         .reader-container {
             flex: 1;
             overflow-y: auto;
             padding: 1rem;
-            background: #fef9ef;
+            background: var(--bg-reader);
             -webkit-overflow-scrolling: touch;
+            transition: background 0.3s;
         }
+        
         #reader-content {
             max-width: 1000px;
             margin: 0 auto;
             padding-bottom: 70px;
+            font-family: 'Georgia', 'Times New Roman', serif;
+            font-size: 1.05rem;
+            line-height: 1.7;
+            word-wrap: break-word;
         }
         
-        /* DESKTOP TOOLBAR */
+        /* Desktop Toolbar */
         .desktop-toolbar {
             display: flex;
-            background: #2c2e3a;
+            background: var(--toolbar-bg);
             padding: 0.75rem 1rem;
             gap: 0.75rem;
             flex-wrap: wrap;
-            border-bottom: 2px solid #ffb347;
+            border-bottom: 2px solid var(--border-color);
             justify-content: center;
             align-items: center;
+            transition: background 0.3s;
         }
+        
         .desktop-toolbar button, 
         .desktop-toolbar select, 
         .desktop-toolbar label,
         .desktop-toolbar .status-badge {
-            background: #3e4050;
+            background: var(--toolbar-button);
             border: none;
             color: white;
             padding: 0.4rem 0.9rem;
@@ -57,41 +111,26 @@
             font-size: 0.85rem;
             cursor: pointer;
             white-space: nowrap;
+            transition: background 0.2s;
         }
-        .desktop-toolbar button:hover { background: #ffb347; color: #1e1f2a; }
-        .desktop-toolbar .clear-cache { background: #aa3e3e; }
-        .desktop-toolbar .clean-bg { background: #2c7a4d; }
+        
+        .desktop-toolbar button:hover { background: var(--toolbar-button-hover); color: #1e1f2a; }
+        .desktop-toolbar .clear-cache { background: var(--danger-btn); }
+        .desktop-toolbar .clean-bg { background: var(--success-btn); }
         .desktop-toolbar .clean-bg.active { background: #ff6b6b; }
-        .desktop-toolbar .copy-btn { background: #4c6a9e; }
-        .desktop-toolbar .split-btn { background: #9b59b6; }
-        .desktop-toolbar .split-btn:hover { background: #8e44ad; }
-        .desktop-toolbar .chapter-select { 
-            background: #1e1f2a; 
-            color: white; 
-            min-width: 200px;
-        }
-        .desktop-toolbar .status-badge {
-            background: #1e1f2a;
-            color: white;
-            font-size: 0.8rem;
-            cursor: default;
-            white-space: nowrap;
-        }
-        .desktop-toolbar input[type="file"] {
-            background: #3e4050;
-            color: white;
-            border: none;
-            padding: 0.3rem 0.6rem;
-            border-radius: 20px;
-            font-size: 0.8rem;
-        }
+        .desktop-toolbar .copy-btn { background: var(--copy-btn); }
+        .desktop-toolbar .split-btn { background: var(--split-btn); }
+        .desktop-toolbar .dark-mode-btn { background: #6c5ce7; }
+        .desktop-toolbar .chapter-select { background: var(--chapter-select-bg); min-width: 200px; max-width: 300px; color: white; }
+        .desktop-toolbar .status-badge { background: var(--status-bg); cursor: default; }
+        .desktop-toolbar input[type="file"] { background: var(--toolbar-button); color: white; border: none; padding: 0.3rem 0.6rem; border-radius: 20px; font-size: 0.8rem; cursor: pointer; }
         
         /* Mobile FAB */
         .mobile-fab {
             position: fixed;
             bottom: 16px;
             right: 16px;
-            background: #2c2e3a;
+            background: var(--toolbar-bg);
             color: white;
             width: 56px;
             height: 56px;
@@ -103,10 +142,9 @@
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0,0,0,0.3);
             z-index: 100;
-            transition: transform 0.2s;
             border: none;
+            transition: background 0.3s;
         }
-        .mobile-fab:active { transform: scale(0.95); }
         
         /* Bottom Action Sheet */
         .action-sheet {
@@ -114,7 +152,7 @@
             bottom: 0;
             left: 0;
             right: 0;
-            background: #2c2e3a;
+            background: var(--toolbar-bg);
             color: white;
             border-radius: 20px 20px 0 0;
             transform: translateY(100%);
@@ -133,27 +171,14 @@
             border-bottom: 1px solid #4a4e6b;
             position: sticky;
             top: 0;
-            background: #2c2e3a;
-            z-index: 1;
+            background: var(--toolbar-bg);
         }
         .action-sheet-header h3 { margin: 0; font-size: 1.1rem; }
-        .close-sheet {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 24px;
-            cursor: pointer;
-            padding: 0;
-            width: 32px;
-            height: 32px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
+        .close-sheet { background: none; border: none; color: white; font-size: 24px; cursor: pointer; }
         .action-sheet-content { padding: 1rem; display: flex; flex-direction: column; gap: 0.75rem; }
         .action-row { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; }
         .action-btn {
-            background: #3e4050;
+            background: var(--toolbar-button);
             border: none;
             color: white;
             padding: 0.6rem 1rem;
@@ -165,13 +190,14 @@
             text-align: center;
         }
         .action-btn:active { background: #ffb347; color: #1e1f2a; }
-        .action-btn.danger { background: #aa3e3e; }
-        .action-btn.clean { background: #2c7a4d; }
+        .action-btn.danger { background: var(--danger-btn); }
+        .action-btn.clean { background: var(--success-btn); }
         .action-btn.clean.active { background: #ff6b6b; }
-        .action-btn.copy { background: #4c6a9e; }
-        .action-btn.split { background: #9b59b6; }
+        .action-btn.copy { background: var(--copy-btn); }
+        .action-btn.split { background: var(--split-btn); }
+        .action-btn.dark { background: #6c5ce7; }
         .chapter-select-mobile {
-            background: #1e1f2a;
+            background: var(--chapter-select-bg);
             color: white;
             padding: 0.6rem;
             border-radius: 30px;
@@ -181,7 +207,7 @@
             min-width: 130px;
         }
         .file-label-mobile {
-            background: #4c6a9e;
+            background: var(--copy-btn);
             padding: 0.6rem 1rem;
             border-radius: 30px;
             font-size: 0.8rem;
@@ -190,7 +216,7 @@
             flex: 1;
         }
         .status-badge-mobile {
-            background: #1e1f2a;
+            background: var(--status-bg);
             padding: 0.4rem 0.8rem;
             border-radius: 20px;
             font-size: 0.7rem;
@@ -199,10 +225,7 @@
         hr { margin: 0.5rem 0; border-color: #4a4e6b; }
         .sheet-overlay {
             position: fixed;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
+            top: 0; left: 0; right: 0; bottom: 0;
             background: rgba(0,0,0,0.5);
             z-index: 150;
             opacity: 0;
@@ -217,7 +240,8 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            background: white;
+            background: var(--modal-bg);
+            color: var(--text-color);
             border-radius: 28px;
             padding: 1.5rem;
             z-index: 400;
@@ -228,40 +252,21 @@
             display: none;
         }
         .split-dialog.show { display: block; }
-        .split-dialog h3 { margin: 0 0 0.5rem 0; color: #2c3e66; }
-        .split-dialog p { margin: 0.5rem 0 1rem 0; color: #666; font-size: 0.9rem; line-height: 1.4; }
-        .split-buttons {
-            display: flex;
-            gap: 1rem;
-            justify-content: center;
-            margin-top: 0.5rem;
-        }
-        .split-buttons button {
-            background: #4c6a9e;
-            color: white;
-            border: none;
-            border-radius: 40px;
-            padding: 0.6rem 1.5rem;
-            font-size: 1rem;
-            cursor: pointer;
-        }
-        .split-buttons button:active { background: #3a5580; }
-        .split-buttons button.part1 { background: #2c7a4d; }
-        .split-buttons button.part2 { background: #9b59b6; }
-        .split-dialog .close-dialog {
-            margin-top: 1rem;
-            background: #aa3e3e;
-            padding: 0.4rem 1rem;
-            font-size: 0.8rem;
-        }
+        .split-dialog h3 { margin: 0 0 0.5rem 0; color: var(--modal-text); }
+        .split-dialog p { margin: 0.5rem 0 1rem 0; color: var(--text-color); opacity: 0.8; line-height: 1.4; }
+        .split-buttons { display: flex; gap: 1rem; justify-content: center; margin-top: 1rem; }
+        .split-buttons button { background: var(--copy-btn); color: white; border: none; border-radius: 40px; padding: 0.6rem 1.5rem; cursor: pointer; }
+        .split-buttons button.part1 { background: var(--success-btn); }
+        .split-buttons button.part2 { background: var(--split-btn); }
+        .split-dialog .close-dialog { margin-top: 1rem; background: var(--danger-btn); padding: 0.4rem 1rem; border-radius: 40px; border: none; color: white; cursor: pointer; }
         
-        /* Toast */
-        .toast {
+        /* Toast & Loading */
+        .toast, .loading-indicator {
             position: fixed;
             bottom: 80px;
             left: 50%;
             transform: translateX(-50%);
-            background: #2c7a4d;
+            background: var(--toast-bg);
             color: white;
             padding: 0.6rem 1.2rem;
             border-radius: 40px;
@@ -271,9 +276,27 @@
             transition: opacity 0.3s;
             pointer-events: none;
             white-space: nowrap;
-            box-shadow: 0 2px 10px rgba(0,0,0,0.2);
         }
-        .toast.show { opacity: 1; }
+        .toast.show, .loading-indicator.visible { opacity: 1; }
+        .loading-indicator { background: var(--toolbar-bg); }
+        
+        /* Progress Bar */
+        .progress-container {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: var(--toolbar-button);
+            z-index: 150;
+            display: none;
+        }
+        .progress-bar {
+            height: 100%;
+            background: var(--border-color);
+            width: 0%;
+            transition: width 0.3s;
+        }
         
         /* Modal */
         .modal {
@@ -287,7 +310,8 @@
             justify-content: center;
         }
         .modal-card {
-            background: white;
+            background: var(--modal-bg);
+            color: var(--text-color);
             width: 90%;
             max-width: 650px;
             max-height: 85vh;
@@ -295,158 +319,69 @@
             padding: 1.5rem;
             overflow-y: auto;
         }
-        .modal-card h3 { margin-top: 0; color: #2c3e66; }
+        .modal-card h3 { margin-top: 0; color: var(--modal-text); }
         .glossary-list { margin: 0.5rem 0; max-height: 200px; overflow-y: auto; }
         .glossary-item { display: flex; gap: 0.5rem; margin-bottom: 0.5rem; align-items: center; flex-wrap: wrap; }
-        .glossary-item input { flex: 1; padding: 0.4rem; border: 1px solid #ccc; border-radius: 10px; font-size: 0.8rem; }
-        .import-section { background: #f5f5f5; padding: 0.8rem; border-radius: 16px; margin-bottom: 0.8rem; }
-        .import-buttons { 
-            display: flex; 
-            gap: 0.5rem; 
-            flex-wrap: wrap; 
-            margin-bottom: 0.5rem;
-            align-items: center;
-        }
-        .import-buttons button, .import-buttons label {
-            background: #4c6a9e;
-            color: white;
-            border: none;
-            border-radius: 30px;
-            padding: 0.4rem 0.8rem;
-            cursor: pointer;
-            font-size: 0.75rem;
-            white-space: nowrap;
-        }
-        .import-buttons button:active, .import-buttons label:active { background: #3a5580; }
-        .import-buttons #clearGlossaryBtn { background: #aa3e3e; }
-        textarea { 
-            width: 100%; 
-            min-height: 80px; 
-            font-family: monospace; 
-            padding: 0.5rem; 
-            border-radius: 12px; 
-            font-size: 0.75rem;
-            border: 1px solid #ccc;
-        }
-        .modal button { background: #4c6a9e; color: white; border: none; border-radius: 30px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.8rem; }
-        .modal button.danger { background: #aa3e3e; }
-        .modal button.success { background: #2c7a4d; }
-        .loading-indicator {
-            position: fixed;
-            bottom: 80px;
-            right: 16px;
-            background: #2c2e3a;
-            color: white;
-            padding: 0.5rem 1rem;
-            border-radius: 30px;
-            font-size: 0.7rem;
-            z-index: 100;
-            opacity: 0;
-            transition: opacity 0.3s;
-            pointer-events: none;
-        }
-        .loading-indicator.visible { opacity: 1; }
+        .glossary-item input { flex: 1; padding: 0.4rem; border: 1px solid var(--input-border); border-radius: 10px; background: var(--bg-reader); color: var(--text-color); }
+        .import-section { background: var(--import-bg); padding: 0.8rem; border-radius: 16px; margin-bottom: 0.8rem; }
+        .import-buttons { display: flex; gap: 0.5rem; flex-wrap: wrap; margin-bottom: 0.5rem; }
+        .import-buttons button, .import-buttons label { background: var(--copy-btn); color: white; border: none; border-radius: 30px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.75rem; }
+        .import-buttons #clearGlossaryBtn { background: var(--danger-btn); }
+        textarea { width: 100%; min-height: 80px; font-family: monospace; padding: 0.5rem; border-radius: 12px; font-size: 0.75rem; border: 1px solid var(--input-border); background: var(--bg-reader); color: var(--text-color); }
+        .modal button { background: var(--copy-btn); color: white; border: none; border-radius: 30px; padding: 0.4rem 0.8rem; cursor: pointer; font-size: 0.8rem; }
+        .modal button.danger { background: var(--danger-btn); }
+        .modal button.success { background: var(--success-btn); }
         
-        @media (max-width: 767px) {
-            .desktop-toolbar { display: none; }
-            .reader-container { padding: 1rem; }
-            .toast { bottom: 80px; font-size: 0.75rem; white-space: nowrap; }
-            .split-dialog { min-width: 280px; }
-            .split-buttons button { padding: 0.5rem 1rem; font-size: 0.9rem; }
-        }
-        @media (min-width: 768px) {
-            .mobile-fab, .action-sheet, .sheet-overlay { display: none; }
-            .reader-container { padding: 2rem; }
-            #reader-content { padding-bottom: 0; }
-            .toast { bottom: 30px; }
-        }
+        @media (max-width: 767px) { .desktop-toolbar { display: none; } }
+        @media (min-width: 768px) { .mobile-fab, .action-sheet, .sheet-overlay { display: none; } }
     </style>
 </head>
 <body>
 
-<!-- Desktop Toolbar -->
 <div class="desktop-toolbar">
-    <label>📖 Novel:</label>
+    <label>📖 Novel (.html):</label>
     <input type="file" id="novelUploadDesktop" accept=".html,.htm">
     <button id="cleanWhiteBgBtnDesktop" class="clean-bg">🧹 Clean White BG</button>
     <button id="prevChapterBtnDesktop">◀</button>
     <select id="chapterSelectDesktop" class="chapter-select"></select>
     <button id="nextChapterBtnDesktop">▶</button>
     <button id="copyBtnDesktop" class="copy-btn">📋 Copy</button>
-    <button id="splitCopyBtnDesktop" class="split-btn">✂️ Split & Copy</button>
+    <button id="splitCopyBtnDesktop" class="split-btn">✂️ Split</button>
+    <button id="darkModeBtnDesktop" class="dark-mode-btn">🌙 Dark</button>
     <button id="glossaryModalBtnDesktop">✏️ Glossary</button>
     <button id="clearCacheBtnDesktop" class="clear-cache">🗑️ Clear</button>
     <span class="status-badge" id="bookmarkStatusDesktop">📌</span>
 </div>
 
-<!-- Mobile FAB -->
+<div class="progress-container" id="progressContainer"><div class="progress-bar" id="progressBar"></div></div>
 <button class="mobile-fab" id="fabBtn">📖</button>
-
-<!-- Overlay -->
 <div class="sheet-overlay" id="sheetOverlay"></div>
 
-<!-- Bottom Action Sheet (Mobile) -->
 <div class="action-sheet" id="actionSheet">
-    <div class="action-sheet-header">
-        <h3>📖 Reader Controls</h3>
-        <button class="close-sheet" id="closeSheetBtn">✕</button>
-    </div>
+    <div class="action-sheet-header"><h3>📖 Controls</h3><button class="close-sheet" id="closeSheetBtn">✕</button></div>
     <div class="action-sheet-content">
-        <div class="action-row">
-            <label class="file-label-mobile">📂 Upload <input type="file" id="novelUploadMobile" accept=".html,.htm" style="display:none;"></label>
-            <button id="cleanWhiteBgBtnMobile" class="action-btn clean">🧹 Clean BG</button>
-        </div>
-        <div class="action-row">
-            <button id="prevChapterBtnMobile" class="action-btn">◀</button>
-            <select id="chapterSelectMobile" class="chapter-select-mobile"></select>
-            <button id="nextChapterBtnMobile" class="action-btn">▶</button>
-        </div>
-        <div class="action-row">
-            <button id="copyBtnMobile" class="action-btn copy">📋 Copy</button>
-            <button id="splitCopyBtnMobile" class="action-btn split">✂️ Split</button>
-        </div>
-        <div class="action-row">
-            <button id="glossaryModalBtnMobile" class="action-btn">✏️ Glossary</button>
-            <button id="clearCacheBtnMobile" class="action-btn danger">🗑️</button>
-        </div>
-        <div class="action-row">
-            <div class="status-badge-mobile" id="bookmarkStatusMobile">📌</div>
-        </div>
-        <hr>
-        <div style="font-size:0.7rem; text-align:center; color:#aaa;">
-            Novel auto-saves • Split by paragraph boundaries
-        </div>
+        <div class="action-row"><label class="file-label-mobile">📂 Upload <input type="file" id="novelUploadMobile" accept=".html,.htm" style="display:none;"></label></div>
+        <div class="action-row"><button id="cleanWhiteBgBtnMobile" class="action-btn clean">🧹 Clean BG</button></div>
+        <div class="action-row"><button id="prevChapterBtnMobile" class="action-btn">◀</button><select id="chapterSelectMobile" class="chapter-select-mobile"></select><button id="nextChapterBtnMobile" class="action-btn">▶</button></div>
+        <div class="action-row"><button id="copyBtnMobile" class="action-btn copy">📋 Copy</button><button id="splitCopyBtnMobile" class="action-btn split">✂️ Split</button></div>
+        <div class="action-row"><button id="darkModeBtnMobile" class="action-btn dark">🌙 Dark</button><button id="glossaryModalBtnMobile" class="action-btn">✏️ Glossary</button></div>
+        <div class="action-row"><button id="clearCacheBtnMobile" class="action-btn danger">🗑️ Clear</button><div class="status-badge-mobile" id="bookmarkStatusMobile">📌</div></div>
+        <hr><div style="font-size:0.7rem; text-align:center; opacity:0.7;">Stores ONLY bookmark (file + position) - No storage limits!</div>
     </div>
 </div>
 
-<!-- Split Dialog -->
 <div id="splitDialog" class="split-dialog">
     <h3>✂️ Split Chapter</h3>
     <p id="splitInfo"></p>
-    <div class="split-buttons">
-        <button id="copyPart1Btn" class="part1">📋 Part 1</button>
-        <button id="copyPart2Btn" class="part2">📋 Part 2</button>
-    </div>
+    <div class="split-buttons"><button id="copyPart1Btn" class="part1">📋 Part 1</button><button id="copyPart2Btn" class="part2">📋 Part 2</button></div>
     <button id="closeDialogBtn" class="close-dialog">Cancel</button>
 </div>
 
-<!-- Main Reading Area -->
-<div class="reader-container" id="readerContainer">
-    <div id="reader-content">
-        <div style="text-align: center; padding: 2rem; color: #888;">
-            📚 Load HTML file<br>
-            ✅ Auto-saves & reloads<br>
-            ✅ Split by paragraph (never cuts in the middle)
-        </div>
-    </div>
-</div>
+<div class="reader-container" id="readerContainer"><div id="reader-content"><div style="text-align:center; padding:2rem;">📚 Load HTML file<br>✅ Stores ONLY bookmark (file name + chapter + scroll position)<br>✅ NO storage limits - works with ANY size file!<br>✅ Re-upload the same file to restore your position</div></div></div>
 
-<!-- Toast Notification -->
-<div id="toast" class="toast">📋 Copied!</div>
+<div id="toast" class="toast"></div>
+<div id="loadingIndicator" class="loading-indicator">📖 Loading...</div>
 
-<div class="loading-indicator" id="loadingIndicator">📖 Loading...</div>
-
-<!-- Glossary Modal -->
 <div id="glossaryModal" class="modal">
     <div class="modal-card">
         <h3>✏️ Find & Replace</h3>
@@ -458,10 +393,8 @@
                 <button id="importJsonBtn">📋 Paste JSON</button>
                 <button id="pasteTextBtn">📝 Paste Text</button>
             </div>
-            <textarea id="jsonPasteArea" placeholder='JSON: [{"find":"text","replace":"new"}]
-OR text: word=replacement (one per line)'></textarea>
+            <textarea id="jsonPasteArea" placeholder='JSON: [{"find":"text","replace":"new"}] OR text: find=replace per line'></textarea>
         </div>
-        <div style="font-weight: 600; margin-bottom: 0.5rem;">Rules:</div>
         <div id="glossaryEntriesContainer" class="glossary-list"></div>
         <button id="addGlossaryBtn">+ Add rule</button>
         <button id="saveGlossaryBtn" class="success">💾 Save & Apply</button>
@@ -470,328 +403,79 @@ OR text: word=replacement (one per line)'></textarea>
 </div>
 
 <script>
-    // ---------- DATA ----------
+    // ============= CONFIG =============
     let chapters = [];
     let currentChapterIdx = 0;
     let currentBookmark = null;
     let glossary = [];
     let globalStylesCache = "";
-    let chapterSplitRegex = "\\d+\\s*화[\\s\\.\\:]*.*?(\\(\\d+\\)|$)";
+    let chapterSplitRegex = "(\\d+\\s*[화話章节]\\s*[^\\n]{0,50})";
+    let splitPart1Text = "", splitPart2Text = "";
+    let currentFileName = null;
     let removeWhiteBgFlag = false;
-    let splitPart1Text = "";
-    let splitPart2Text = "";
     
-    const STORAGE_KEYS = {
-        NOVEL_DATA: 'saved_novel_data',
-        NOVEL_STYLES: 'saved_novel_styles',
-        NOVEL_REGEX: 'saved_novel_regex',
-        NOVEL_ID: 'saved_novel_id',
-        BOOKMARK_PREFIX: 'bookmark_',
-        GLOSSARY: 'novel_glossary',
-        CLEAN_BG_FLAG: 'clean_bg_flag'
-    };
+    // Storage keys - ONLY for bookmark (tiny data!)
+    const BOOKMARK_KEY = 'htmlNovelBookmark';
+    const SETTINGS_KEY = 'htmlNovelSettings';
+    const GLOSSARY_KEY = 'htmlNovelGlossary';
+    const CLEAN_BG_KEY = 'htmlCleanBgFlag';
+    const REGEX_KEY = 'htmlNovelRegex';
     
-    // Toast notification
-    function showToast(message) {
-        const toast = document.getElementById('toast');
-        toast.textContent = message || '📋 Copied!';
-        toast.classList.add('show');
-        setTimeout(() => {
-            toast.classList.remove('show');
-        }, 2000);
+    // ============= DARK MODE =============
+    function toggleDarkMode() {
+        document.body.classList.toggle('dark');
+        const isDark = document.body.classList.contains('dark');
+        const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        settings.darkMode = isDark;
+        localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+        const btns = document.querySelectorAll('#darkModeBtnDesktop, #darkModeBtnMobile');
+        btns.forEach(btn => { if(btn) btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark'; });
     }
     
-    // Get formatted text from current chapter (preserves paragraph structure)
-    function getFormattedChapterText() {
-        if (!chapters.length) return "";
-        
-        const readerContent = document.getElementById('reader-content');
-        if (!readerContent) return "";
-        
-        const clone = readerContent.cloneNode(true);
-        clone.querySelectorAll('style').forEach(style => style.remove());
-        
-        function extractFormattedText(element) {
-            let result = [];
-            
-            function processNode(node) {
-                if (node.nodeType === Node.TEXT_NODE) {
-                    let text = node.textContent;
-                    text = text.replace(/[ \t]+/g, ' ');
-                    if (text.trim()) {
-                        result.push(text);
-                    }
-                    return;
-                }
-                
-                const tagName = node.tagName ? node.tagName.toLowerCase() : '';
-                const blockTags = ['p', 'div', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6', 'li', 'blockquote'];
-                const isBlock = blockTags.includes(tagName);
-                
-                if (tagName.match(/^h[1-6]$/)) {
-                    if (result.length > 0 && result[result.length - 1] !== '') {
-                        result.push('');
-                    }
-                }
-                
-                node.childNodes.forEach(child => processNode(child));
-                
-                if (isBlock) {
-                    if (result.length > 0 && result[result.length - 1] !== '') {
-                        result.push('');
-                    }
-                } else if (tagName === 'br') {
-                    result.push('');
-                }
-            }
-            
-            processNode(element);
-            
-            let cleaned = [];
-            let emptyCount = 0;
-            for (let line of result) {
-                if (line === '' || line.trim() === '') {
-                    emptyCount++;
-                    if (emptyCount <= 2) {
-                        cleaned.push('');
-                    }
-                } else {
-                    emptyCount = 0;
-                    cleaned.push(line);
-                }
-            }
-            while (cleaned.length > 0 && cleaned[cleaned.length - 1] === '') {
-                cleaned.pop();
-            }
-            return cleaned.join('\n').trim();
+    function loadDarkModePreference() {
+        const settings = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
+        if (settings.darkMode) {
+            document.body.classList.add('dark');
+            const btns = document.querySelectorAll('#darkModeBtnDesktop, #darkModeBtnMobile');
+            btns.forEach(btn => { if(btn) btn.innerHTML = '☀️ Light'; });
         }
-        
-        return extractFormattedText(clone);
     }
     
-    // Split text into two parts at paragraph boundaries (never cut inside a paragraph)
-    function splitTextAtParagraphBoundary(text) {
-        if (!text) return ["", ""];
-        
-        // Split by double newlines (paragraph boundaries)
-        const paragraphs = text.split(/\n\s*\n/);
-        
-        if (paragraphs.length <= 1) {
-            // If only one paragraph, fall back to sentence boundary
-            return splitTextAtSentenceBoundary(text);
-        }
-        
-        // Calculate total characters
-        const totalChars = text.length;
-        const targetChars = totalChars / 2;
-        
-        // Find the best paragraph to split at
-        let accumulatedChars = 0;
-        let bestSplitIndex = 0;
-        let bestDistance = Infinity;
-        
-        for (let i = 0; i < paragraphs.length; i++) {
-            const paraChars = paragraphs[i].length;
-            const distance = Math.abs(accumulatedChars + paraChars - targetChars);
-            
-            if (distance < bestDistance) {
-                bestDistance = distance;
-                bestSplitIndex = i + 1; // Split after this paragraph
-            }
-            
-            accumulatedChars += paraChars + 2; // +2 for the \n\n separator
-        }
-        
-        // Ensure we don't split at the very beginning or end
-        if (bestSplitIndex <= 0) bestSplitIndex = 1;
-        if (bestSplitIndex >= paragraphs.length) bestSplitIndex = paragraphs.length - 1;
-        
-        // Build parts
-        const part1Paragraphs = paragraphs.slice(0, bestSplitIndex);
-        const part2Paragraphs = paragraphs.slice(bestSplitIndex);
-        
-        const part1 = part1Paragraphs.join('\n\n').trim();
-        const part2 = part2Paragraphs.join('\n\n').trim();
-        
-        return [part1, part2];
+    // ============= BOOKMARK (stores ONLY position, NOT the novel) =============
+    function saveBookmark() {
+        if (!chapters.length || !currentFileName) return;
+        const scrollY = document.querySelector('.reader-container')?.scrollTop || 0;
+        const bookmark = {
+            fileName: currentFileName,
+            chapterIdx: currentChapterIdx,
+            scrollY: scrollY,
+            timestamp: Date.now()
+        };
+        localStorage.setItem(BOOKMARK_KEY, JSON.stringify(bookmark));
+        updateStatus();
+        console.log("Bookmark saved:", currentFileName, "chapter", currentChapterIdx);
     }
     
-    // Fallback: split at sentence boundaries (only used if no paragraph breaks)
-    function splitTextAtSentenceBoundary(text) {
-        if (!text) return ["", ""];
-        
-        const totalChars = text.length;
-        const targetChars = totalChars / 2;
-        
-        // Look for sentence boundaries around the target
-        const sentenceEndChars = ['.', '!', '?', '。', '！', '？'];
-        let bestSplit = totalChars;
-        let bestDistance = Infinity;
-        
-        // Search within 20% of length around target
-        const searchStart = Math.max(0, targetChars - totalChars * 0.1);
-        const searchEnd = Math.min(totalChars, targetChars + totalChars * 0.1);
-        
-        for (let i = searchStart; i < searchEnd; i++) {
-            if (sentenceEndChars.includes(text[i]) && i + 1 < totalChars) {
-                // Check if it's followed by space or newline
-                const nextChar = text[i + 1];
-                if (nextChar === ' ' || nextChar === '\n' || nextChar === '\r') {
-                    const distance = Math.abs(i + 2 - targetChars);
-                    if (distance < bestDistance) {
-                        bestDistance = distance;
-                        bestSplit = i + 2;
-                    }
-                }
-            }
-        }
-        
-        // If no good boundary found, split at space
-        if (bestDistance === Infinity) {
-            for (let i = targetChars; i < Math.min(totalChars, targetChars + 200); i++) {
-                if (text[i] === ' ') {
-                    bestSplit = i + 1;
-                    break;
-                }
-            }
-        }
-        
-        const part1 = text.substring(0, bestSplit).trim();
-        const part2 = text.substring(bestSplit).trim();
-        
-        return [part1, part2];
-    }
-    
-    // Format number with commas
-    function formatNumber(num) {
-        return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
-    }
-    
-    // Show split dialog
-    function showSplitDialog() {
-        if (!chapters.length) {
-            showToast('❌ No chapter loaded');
-            return;
-        }
-        
-        const fullText = getFormattedChapterText();
-        if (!fullText) {
-            showToast('❌ No text to split');
-            return;
-        }
-        
-        const [part1, part2] = splitTextAtParagraphBoundary(fullText);
-        splitPart1Text = part1;
-        splitPart2Text = part2;
-        
-        const charCount1 = part1.length;
-        const charCount2 = part2.length;
-        const totalChars = fullText.length;
-        const percent1 = Math.round((charCount1 / totalChars) * 100);
-        const percent2 = Math.round((charCount2 / totalChars) * 100);
-        
-        const dialog = document.getElementById('splitDialog');
-        const info = document.getElementById('splitInfo');
-        info.innerHTML = `📊 Total: ${formatNumber(totalChars)} characters<br>📖 Part 1: ${formatNumber(charCount1)} chars (${percent1}%) &nbsp;|&nbsp; 📖 Part 2: ${formatNumber(charCount2)} chars (${percent2}%)<br>✂️ Split between paragraphs - no cut in middle`;
-        dialog.classList.add('show');
-    }
-    
-    async function copySplitPart(partNumber) {
-        const text = partNumber === 1 ? splitPart1Text : splitPart2Text;
-        if (!text) {
-            showToast('❌ No text to copy');
-            return;
-        }
-        
+    function getSavedBookmark() {
+        const saved = localStorage.getItem(BOOKMARK_KEY);
+        if (!saved) return null;
         try {
-            await navigator.clipboard.writeText(text);
-            const charCount = text.length;
-            showToast(`📋 Part ${partNumber} copied (${formatNumber(charCount)} chars)`);
-            document.getElementById('splitDialog').classList.remove('show');
-        } catch (err) {
-            const textarea = document.createElement('textarea');
-            textarea.value = text;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            const charCount = text.length;
-            showToast(`📋 Part ${partNumber} copied (${formatNumber(charCount)} chars)`);
-            document.getElementById('splitDialog').classList.remove('show');
-        }
+            return JSON.parse(saved);
+        } catch(e) { return null; }
     }
     
-    // Copy full chapter (preserves structure)
-    async function copyFullChapter() {
-        if (!chapters.length) {
-            showToast('❌ No chapter loaded');
-            return;
-        }
-        
-        const formattedText = getFormattedChapterText();
-        if (!formattedText) {
-            showToast('❌ No text to copy');
-            return;
-        }
-        
-        try {
-            await navigator.clipboard.writeText(formattedText);
-            const charCount = formattedText.length;
-            showToast(`📋 Copied ${formatNumber(charCount)} characters`);
-        } catch (err) {
-            const textarea = document.createElement('textarea');
-            textarea.value = formattedText;
-            document.body.appendChild(textarea);
-            textarea.select();
-            document.execCommand('copy');
-            document.body.removeChild(textarea);
-            const charCount = formattedText.length;
-            showToast(`📋 Copied ${formatNumber(charCount)} characters`);
-        }
+    function clearBookmark() {
+        localStorage.removeItem(BOOKMARK_KEY);
     }
     
-    // Mobile sheet controls
-    function openSheet() {
-        document.getElementById('actionSheet').classList.add('open');
-        document.getElementById('sheetOverlay').classList.add('visible');
-    }
-    function closeSheet() {
-        document.getElementById('actionSheet').classList.remove('open');
-        document.getElementById('sheetOverlay').classList.remove('visible');
-    }
-    
-    // Save novel
-    function saveNovelToStorage() {
-        if (!chapters.length) return;
-        const novelData = { chapters: chapters, currentChapterIdx: currentChapterIdx, timestamp: Date.now(), fileName: currentNovelId };
-        localStorage.setItem(STORAGE_KEYS.NOVEL_DATA, JSON.stringify(novelData));
-        localStorage.setItem(STORAGE_KEYS.NOVEL_STYLES, globalStylesCache);
-        localStorage.setItem(STORAGE_KEYS.NOVEL_REGEX, chapterSplitRegex);
-        localStorage.setItem(STORAGE_KEYS.NOVEL_ID, currentNovelId);
-    }
-    
-    function loadNovelFromStorage() {
-        const savedData = localStorage.getItem(STORAGE_KEYS.NOVEL_DATA);
-        if (!savedData) return false;
-        try {
-            const novelData = JSON.parse(savedData);
-            chapters = novelData.chapters;
-            currentChapterIdx = novelData.currentChapterIdx || 0;
-            currentNovelId = novelData.fileName || localStorage.getItem(STORAGE_KEYS.NOVEL_ID) || "saved_novel";
-            globalStylesCache = localStorage.getItem(STORAGE_KEYS.NOVEL_STYLES) || "";
-            const savedRegex = localStorage.getItem(STORAGE_KEYS.NOVEL_REGEX);
-            if (savedRegex) chapterSplitRegex = savedRegex;
-            return true;
-        } catch(e) { return false; }
-    }
-    
-    // Clean white background flag
-    function saveCleanBgFlag() { localStorage.setItem(STORAGE_KEYS.CLEAN_BG_FLAG, removeWhiteBgFlag ? 'true' : 'false'); }
+    // ============= CLEAN WHITE BG =============
+    function saveCleanBgFlag() { localStorage.setItem(CLEAN_BG_KEY, removeWhiteBgFlag ? 'true' : 'false'); }
     function loadCleanBgFlag() {
-        const saved = localStorage.getItem(STORAGE_KEYS.CLEAN_BG_FLAG);
+        const saved = localStorage.getItem(CLEAN_BG_KEY);
         removeWhiteBgFlag = saved === 'true';
         updateCleanBgButtons();
     }
+    
     function updateCleanBgButtons() {
         const desktopBtn = document.getElementById('cleanWhiteBgBtnDesktop');
         const mobileBtn = document.getElementById('cleanWhiteBgBtnMobile');
@@ -815,7 +499,6 @@ OR text: word=replacement (one per line)'></textarea>
         }
     }
     
-    // White background remover
     function cleanWhiteBackgrounds(htmlString) {
         if (!removeWhiteBgFlag) return htmlString;
         let cleanedHtml = htmlString.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, cssContent) => {
@@ -840,24 +523,48 @@ OR text: word=replacement (one per line)'></textarea>
         return doc.body.innerHTML;
     }
     
-    function extractGlobalStyles(htmlString) {
-        let cleanedHtml = htmlString;
-        if (removeWhiteBgFlag) {
-            cleanedHtml = htmlString.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, cssContent) => {
-                let cleanedCss = cssContent.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
-                cleanedCss = cleanedCss.replace(/background\s*:\s*(white|#fff|#ffffff|#FFFFFF)\s*;?\s*/gi, '');
-                return `<style${attrs}>${cleanedCss}</style>`;
-            });
-        }
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(cleanedHtml, 'text/html');
-        let styles = '';
-        doc.querySelectorAll('style').forEach(style => { styles += style.innerHTML + '\n'; });
-        let linksHtml = '';
-        doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => { linksHtml += link.outerHTML + '\n'; });
-        return { styles, linksHtml };
+    // ============= UTILITIES =============
+    function showToast(msg) {
+        const toast = document.getElementById('toast');
+        toast.textContent = msg;
+        toast.classList.add('show');
+        setTimeout(() => toast.classList.remove('show'), 2000);
     }
     
+    function showLoading(msg) {
+        const loader = document.getElementById('loadingIndicator');
+        loader.textContent = msg || '📖 Loading...';
+        loader.classList.add('visible');
+    }
+    
+    function hideLoading() { document.getElementById('loadingIndicator').classList.remove('visible'); }
+    
+    function formatNumber(n) { return n.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ","); }
+    
+    function applyGlossaryToHtml(htmlString) {
+        if (!glossary.length) return htmlString;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlString, 'text/html');
+        const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, {
+            acceptNode: (node) => node.parentElement && ['SCRIPT', 'STYLE'].includes(node.parentElement.tagName) ? NodeFilter.FILTER_SKIP : NodeFilter.FILTER_ACCEPT
+        });
+        const textNodes = [];
+        while(walker.nextNode()) textNodes.push(walker.currentNode);
+        for (let node of textNodes) {
+            let text = node.textContent;
+            for (let rule of glossary) {
+                if (rule.isRegex) {
+                    try { const re = new RegExp(rule.find, 'g'); text = text.replace(re, rule.replace); } catch(e) {}
+                } else {
+                    if (text.includes(rule.find)) text = text.split(rule.find).join(rule.replace);
+                }
+            }
+            node.textContent = text;
+        }
+        return doc.body.innerHTML;
+    }
+    
+    // ============= CHAPTER SPLITTING =============
     function splitHtmlSmart(fullHtmlString, regexPattern, fileNameHint = "novel") {
         const parser = new DOMParser();
         const doc = parser.parseFromString(fullHtmlString, 'text/html');
@@ -899,54 +606,64 @@ OR text: word=replacement (one per line)'></textarea>
         return chaptersList;
     }
     
-    function applyGlossaryToHtml(htmlString) {
-        if (!glossary.length) return htmlString;
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlString, 'text/html');
-        const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_TEXT, { acceptNode: (node) => node.parentElement && ['SCRIPT', 'STYLE'].includes(node.parentElement.tagName) ? NodeFilter.FILTER_SKIP : NodeFilter.FILTER_ACCEPT });
-        const textNodes = [];
-        while(walker.nextNode()) textNodes.push(walker.currentNode);
-        for (let node of textNodes) {
-            let text = node.textContent;
-            for (let rule of glossary) {
-                if (rule.isRegex) {
-                    try { const re = new RegExp(rule.find, 'g'); text = text.replace(re, rule.replace); } catch(e) {}
-                } else {
-                    if (text.includes(rule.find)) text = text.split(rule.find).join(rule.replace);
-                }
-            }
-            node.textContent = text;
+    function extractGlobalStyles(htmlString) {
+        let cleanedHtml = htmlString;
+        if (removeWhiteBgFlag) {
+            cleanedHtml = htmlString.replace(/<style([^>]*)>([\s\S]*?)<\/style>/gi, (match, attrs, cssContent) => {
+                let cleanedCss = cssContent.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
+                cleanedCss = cleanedCss.replace(/background\s*:\s*(white|#fff|#ffffff|#FFFFFF)\s*;?\s*/gi, '');
+                return `<style${attrs}>${cleanedCss}</style>`;
+            });
         }
-        return doc.body.innerHTML;
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(cleanedHtml, 'text/html');
+        let styles = '';
+        doc.querySelectorAll('style').forEach(style => { styles += style.innerHTML + '\n'; });
+        let linksHtml = '';
+        doc.querySelectorAll('link[rel="stylesheet"]').forEach(link => { linksHtml += link.outerHTML + '\n'; });
+        return { styles, linksHtml };
     }
     
-    function renderCurrentChapter(restoreScroll = true) {
+    // ============= RENDERING =============
+    async function renderCurrentChapter(restoreScroll = true) {
         if (!chapters.length) {
-            document.getElementById('reader-content').innerHTML = '<div style="padding:2rem;text-align:center;">📭 No chapters. Import an HTML file.</div>';
+            document.getElementById('reader-content').innerHTML = '<div style="padding:2rem;text-align:center;">📭 No novel loaded. Upload an HTML file.<br><br>✅ Your reading position is saved!<br>✅ Refresh and re-upload the SAME file to continue where you left off.</div>';
             updateSelectors();
             return;
         }
+        
         const chapter = chapters[currentChapterIdx];
         let contentWithGlossary = applyGlossaryToHtml(chapter.originalHtml);
         if (removeWhiteBgFlag) contentWithGlossary = cleanWhiteBackgrounds(`<div>${contentWithGlossary}</div>`);
+        
         let stylesToUse = globalStylesCache;
         if (removeWhiteBgFlag && stylesToUse) {
             stylesToUse = stylesToUse.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
         }
+        
         document.getElementById('reader-content').innerHTML = `<style>${stylesToUse}</style><div class="novel-chapter-content">${contentWithGlossary}</div>`;
         updateSelectors();
-        if (restoreScroll && currentBookmark && currentBookmark.chapterIdx === currentChapterIdx) {
-            setTimeout(() => { document.querySelector('.reader-container').scrollTop = currentBookmark.scrollY; }, 30);
-        } else if (restoreScroll) { document.querySelector('.reader-container').scrollTop = 0; }
+        
+        if (restoreScroll && currentBookmark && currentBookmark.chapterIdx === currentChapterIdx && currentBookmark.scrollY) {
+            setTimeout(() => {
+                const container = document.querySelector('.reader-container');
+                if (container) container.scrollTop = currentBookmark.scrollY;
+            }, 100);
+        } else {
+            document.querySelector('.reader-container').scrollTop = 0;
+        }
+        
         attachScrollSave();
         updateStatus();
-        saveNovelToStorage();
+        saveBookmark();
     }
     
     function updateSelectors() {
         const options = chapters.map((ch, idx) => `<option value="${idx}" ${idx === currentChapterIdx ? 'selected' : ''}>${ch.title || `Ch ${idx+1}`}</option>`).join('');
-        if (document.getElementById('chapterSelectDesktop')) document.getElementById('chapterSelectDesktop').innerHTML = options;
-        if (document.getElementById('chapterSelectMobile')) document.getElementById('chapterSelectMobile').innerHTML = options;
+        const desktopSel = document.getElementById('chapterSelectDesktop');
+        const mobileSel = document.getElementById('chapterSelectMobile');
+        if (desktopSel) desktopSel.innerHTML = options || '<option>No chapters</option>';
+        if (mobileSel) mobileSel.innerHTML = options || '<option>No chapters</option>';
     }
     
     let scrollTimeout = null;
@@ -954,10 +671,8 @@ OR text: word=replacement (one per line)'></textarea>
         const container = document.querySelector('.reader-container');
         if (!container) return;
         const save = () => {
-            const top = container.scrollTop;
-            if (currentBookmark && currentBookmark.chapterIdx === currentChapterIdx && currentBookmark.scrollY === top) return;
-            currentBookmark = { chapterIdx: currentChapterIdx, scrollY: top, timestamp: Date.now() };
-            localStorage.setItem(STORAGE_KEYS.BOOKMARK_PREFIX + currentNovelId, JSON.stringify(currentBookmark));
+            if (!chapters.length) return;
+            saveBookmark();
             updateStatus();
         };
         container.removeEventListener('scroll', save);
@@ -965,67 +680,148 @@ OR text: word=replacement (one per line)'></textarea>
             if (scrollTimeout) clearTimeout(scrollTimeout);
             scrollTimeout = setTimeout(save, 200);
         });
-        save();
     }
     
     function updateStatus() {
         const text = (currentBookmark && chapters.length) ? `🔖 ${currentBookmark.chapterIdx+1}/${chapters.length}` : (chapters.length ? `📖 ${chapters.length}ch` : `📌`);
-        if (document.getElementById('bookmarkStatusDesktop')) document.getElementById('bookmarkStatusDesktop').innerText = text;
-        if (document.getElementById('bookmarkStatusMobile')) document.getElementById('bookmarkStatusMobile').innerText = text;
+        const desktopStatus = document.getElementById('bookmarkStatusDesktop');
+        const mobileStatus = document.getElementById('bookmarkStatusMobile');
+        if (desktopStatus) desktopStatus.innerText = text;
+        if (mobileStatus) mobileStatus.innerText = text;
     }
     
-    function loadBookmark() {
-        const saved = localStorage.getItem(STORAGE_KEYS.BOOKMARK_PREFIX + currentNovelId);
-        if (saved) {
-            try {
-                currentBookmark = JSON.parse(saved);
-                if (currentBookmark.chapterIdx < chapters.length) currentChapterIdx = currentBookmark.chapterIdx;
-            } catch(e) {}
+    // ============= COPY & SPLIT =============
+    function getFormattedChapterText() {
+        if (!chapters.length) return "";
+        const readerContent = document.getElementById('reader-content');
+        if (!readerContent) return "";
+        const clone = readerContent.cloneNode(true);
+        clone.querySelectorAll('style').forEach(style => style.remove());
+        return clone.textContent || clone.innerText || "";
+    }
+    
+    function splitTextAtParagraphBoundary(text) {
+        if (!text) return ["", ""];
+        const paragraphs = text.split(/\n\s*\n/);
+        if (paragraphs.length <= 1) {
+            const mid = Math.floor(text.length / 2);
+            let splitPos = mid;
+            for (let i = mid; i < Math.min(text.length, mid + 200); i++) {
+                if (['.', '!', '?', '。', '！', '？', '\n'].includes(text[i])) { splitPos = i + 1; break; }
+            }
+            return [text.substring(0, splitPos).trim(), text.substring(splitPos).trim()];
         }
-        renderCurrentChapter(true);
+        let accumulated = 0, bestIdx = 0, bestDist = Infinity;
+        for (let i = 0; i < paragraphs.length; i++) {
+            const dist = Math.abs(accumulated + paragraphs[i].length - text.length / 2);
+            if (dist < bestDist) { bestDist = dist; bestIdx = i + 1; }
+            accumulated += paragraphs[i].length + 2;
+        }
+        if (bestIdx <= 0) bestIdx = 1;
+        if (bestIdx >= paragraphs.length) bestIdx = paragraphs.length - 1;
+        return [paragraphs.slice(0, bestIdx).join('\n\n').trim(), paragraphs.slice(bestIdx).join('\n\n').trim()];
     }
     
-    async function importNovel(file, customRegex = null) {
-        const loading = document.getElementById('loadingIndicator');
-        loading.classList.add('visible');
-        if (customRegex) chapterSplitRegex = customRegex;
+    function showSplitDialog() {
+        if (!chapters.length) { showToast('❌ No chapter'); return; }
+        const fullText = getFormattedChapterText();
+        if (!fullText) { showToast('❌ No text'); return; }
+        const [p1, p2] = splitTextAtParagraphBoundary(fullText);
+        splitPart1Text = p1; splitPart2Text = p2;
+        document.getElementById('splitInfo').innerHTML = `Total: ${formatNumber(fullText.length)} chars<br>Part1: ${formatNumber(p1.length)} chars | Part2: ${formatNumber(p2.length)} chars`;
+        document.getElementById('splitDialog').classList.add('show');
+    }
+    
+    async function copySplitPart(part) {
+        const text = part === 1 ? splitPart1Text : splitPart2Text;
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast(`📋 Part ${part} copied (${formatNumber(text.length)} chars)`);
+            document.getElementById('splitDialog').classList.remove('show');
+        } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast(`📋 Part ${part} copied`); }
+    }
+    
+    async function copyFullChapter() {
+        if (!chapters.length) { showToast('❌ No chapter'); return; }
+        const text = getFormattedChapterText();
+        if (!text) return;
+        try {
+            await navigator.clipboard.writeText(text);
+            showToast(`📋 Copied ${formatNumber(text.length)} chars`);
+        } catch { const ta = document.createElement('textarea'); ta.value = text; document.body.appendChild(ta); ta.select(); document.execCommand('copy'); document.body.removeChild(ta); showToast(`📋 Copied`); }
+    }
+    
+    // ============= IMPORT =============
+    async function importNovel(file, customRegex) {
+        if (customRegex && customRegex.trim()) {
+            chapterSplitRegex = customRegex;
+            localStorage.setItem(REGEX_KEY, chapterSplitRegex);
+        }
+        
+        const fileName = file.name;
+        
+        showLoading(`📖 Loading ${fileName}...`);
+        
         return new Promise((resolve, reject) => {
             const reader = new FileReader();
             reader.onload = async (e) => {
                 const fullHtml = e.target.result;
                 const { styles, linksHtml } = extractGlobalStyles(fullHtml);
                 globalStylesCache = styles + '\n' + linksHtml;
-                const split = splitHtmlSmart(fullHtml, chapterSplitRegex, file.name);
+                const split = splitHtmlSmart(fullHtml, chapterSplitRegex, fileName);
                 if (!split.length) reject("No content");
                 chapters = split;
-                currentNovelId = file.name.replace(/\.html$/i, '').replace(/[^a-z0-9]/gi, '_') + '_' + Date.now();
-                currentChapterIdx = 0;
-                currentBookmark = null;
-                saveNovelToStorage();
-                loadBookmark();
-                loading.classList.remove('visible');
+                currentFileName = fileName;
+                
+                // Check for saved bookmark for this file
+                const bookmark = getSavedBookmark();
+                if (bookmark && bookmark.fileName === fileName && bookmark.chapterIdx < chapters.length) {
+                    currentChapterIdx = bookmark.chapterIdx;
+                    currentBookmark = { chapterIdx: currentChapterIdx, scrollY: bookmark.scrollY || 0 };
+                    showToast(`📖 Resumed at chapter ${currentChapterIdx + 1}`);
+                } else {
+                    currentChapterIdx = 0;
+                    currentBookmark = { chapterIdx: 0, scrollY: 0 };
+                }
+                
+                await renderCurrentChapter(true);
+                hideLoading();
+                showToast(`✅ ${chapters.length} chapters loaded! Position saved.`);
                 resolve(chapters.length);
             };
-            reader.onerror = (err) => { loading.classList.remove('visible'); reject(err); };
+            reader.onerror = (err) => { hideLoading(); reject(err); };
             reader.readAsText(file, 'UTF-8');
         });
     }
     
-    function loadSavedNovel() { if (loadNovelFromStorage() && chapters.length) loadBookmark(); }
-    function toggleWhiteBgClean() { removeWhiteBgFlag = !removeWhiteBgFlag; saveCleanBgFlag(); updateCleanBgButtons(); if (chapters.length) renderCurrentChapter(true); }
+    function clearAllCache() {
+        if (confirm("Clear bookmark? This will delete your saved reading position.")) {
+            clearBookmark();
+            localStorage.removeItem(REGEX_KEY);
+            showToast("🗑️ Bookmark cleared");
+        }
+    }
     
-    // Glossary functions
-    function saveGlossary() { localStorage.setItem(STORAGE_KEYS.GLOSSARY, JSON.stringify(glossary.map(g => ({ find: g.find, replace: g.replace, isRegex: g.isRegex })))); }
+    function toggleWhiteBgClean() {
+        removeWhiteBgFlag = !removeWhiteBgFlag;
+        saveCleanBgFlag();
+        updateCleanBgButtons();
+        if (chapters.length) renderCurrentChapter(true);
+    }
+    
+    // ============= GLOSSARY =============
+    function saveGlossary() { localStorage.setItem(GLOSSARY_KEY, JSON.stringify(glossary.map(g => ({ find: g.find, replace: g.replace, isRegex: g.isRegex })))); }
     function loadGlossary() {
-        const raw = localStorage.getItem(STORAGE_KEYS.GLOSSARY);
-        if (raw) try { glossary = JSON.parse(raw).map(g => ({ find: g.find, replace: g.replace, isRegex: g.isRegex })); } catch(e) { glossary = []; }
+        const raw = localStorage.getItem(GLOSSARY_KEY);
+        if (raw) try { glossary = JSON.parse(raw); } catch(e) { glossary = []; }
         renderGlossaryUI();
     }
-    function clearAllGlossary() { if (confirm("Clear all rules?")) { glossary = []; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); alert("✅ Cleared"); } }
+    function clearAllGlossary() { if (confirm("Clear all rules?")) { glossary = []; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); showToast("✅ Cleared"); } }
     function renderGlossaryUI() {
         const container = document.getElementById('glossaryEntriesContainer');
         if (!container) return;
-        if (glossary.length === 0) { container.innerHTML = '<div style="text-align:center; padding:1rem; color:#999;">No rules</div>'; return; }
+        if (glossary.length === 0) { container.innerHTML = '<div style="padding:1rem; text-align:center; opacity:0.7;">No rules</div>'; return; }
         container.innerHTML = '';
         glossary.forEach((rule, idx) => {
             const div = document.createElement('div'); div.className = 'glossary-item';
@@ -1033,14 +829,16 @@ OR text: word=replacement (one per line)'></textarea>
             const replaceInput = document.createElement('input'); replaceInput.value = rule.replace; replaceInput.placeholder = "Replace";
             const regexCheck = document.createElement('input'); regexCheck.type = 'checkbox'; regexCheck.checked = rule.isRegex;
             const label = document.createElement('label'); label.innerText = 'RegEx';
-            const del = document.createElement('button'); del.innerText = '✖'; del.className = 'danger'; del.onclick = () => { glossary.splice(idx,1); renderGlossaryUI(); saveGlossary(); if (chapters.length) renderCurrentChapter(true); };
+            const del = document.createElement('button'); del.innerText = '✖'; del.className = 'danger';
+            del.onclick = () => { glossary.splice(idx,1); renderGlossaryUI(); saveGlossary(); if (chapters.length) renderCurrentChapter(true); };
             const update = () => { glossary[idx] = { find: findInput.value, replace: replaceInput.value, isRegex: regexCheck.checked }; saveGlossary(); if (chapters.length) renderCurrentChapter(true); };
             findInput.onchange = update; replaceInput.onchange = update; regexCheck.onchange = update;
-            div.append(findInput, replaceInput, regexCheck, label, del); container.appendChild(div);
+            div.append(findInput, replaceInput, regexCheck, label, del);
+            container.appendChild(div);
         });
     }
     function importJson(content) {
-        try { const parsed = JSON.parse(content); if (Array.isArray(parsed)) { glossary = parsed.map(item => ({ find: item.find, replace: item.replace, isRegex: item.regex || false })); saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); alert(`✅ ${glossary.length} imported`); return true; } } catch(e) { alert("Invalid JSON"); } return false;
+        try { const parsed = JSON.parse(content); if (Array.isArray(parsed)) { glossary = parsed.map(i => ({ find: i.find, replace: i.replace, isRegex: i.regex || false })); saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); showToast(`✅ ${glossary.length} imported`); return true; } } catch(e) { alert("Invalid JSON"); } return false;
     }
     function importTextPairs(content) {
         const lines = content.split(/\r?\n/);
@@ -1054,56 +852,65 @@ OR text: word=replacement (one per line)'></textarea>
                 if (find && replace) newGlossary.push({ find, replace, isRegex: false });
             }
         }
-        if (newGlossary.length) { glossary = newGlossary; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); alert(`✅ ${newGlossary.length} imported`); return true; }
+        if (newGlossary.length) { glossary = newGlossary; saveGlossary(); renderGlossaryUI(); if (chapters.length) renderCurrentChapter(true); showToast(`✅ ${newGlossary.length} imported`); return true; }
         alert("No valid pairs"); return false;
     }
-    function clearCache() { if (confirm("Clear all data?")) { localStorage.clear(); location.reload(); } }
     
-    // Event binding
+    // ============= EVENT BINDINGS =============
     function bind(id, event, handler) { const el = document.getElementById(id); if(el) el.addEventListener(event, handler); }
     
-    window.onload = () => {
+    function openSheet() { document.getElementById('actionSheet').classList.add('open'); document.getElementById('sheetOverlay').classList.add('visible'); }
+    function closeSheet() { document.getElementById('actionSheet').classList.remove('open'); document.getElementById('sheetOverlay').classList.remove('visible'); }
+    
+    // ============= INIT =============
+    window.onload = async () => {
+        console.log("Page loaded - Bookmark-only mode (no storage limits)");
+        loadDarkModePreference();
         loadCleanBgFlag();
         loadGlossary();
-        loadSavedNovel();
         
-        // Copy buttons
+        const savedRegex = localStorage.getItem(REGEX_KEY);
+        if (savedRegex) chapterSplitRegex = savedRegex;
+        
+        await renderCurrentChapter(false);
+        
+        // Bind events
+        bind('darkModeBtnDesktop', 'click', toggleDarkMode);
+        bind('darkModeBtnMobile', 'click', toggleDarkMode);
         bind('copyBtnDesktop', 'click', copyFullChapter);
         bind('copyBtnMobile', 'click', () => { copyFullChapter(); closeSheet(); });
         bind('splitCopyBtnDesktop', 'click', showSplitDialog);
         bind('splitCopyBtnMobile', 'click', () => { showSplitDialog(); closeSheet(); });
-        
-        // Split dialog buttons
         bind('copyPart1Btn', 'click', () => copySplitPart(1));
         bind('copyPart2Btn', 'click', () => copySplitPart(2));
         bind('closeDialogBtn', 'click', () => document.getElementById('splitDialog').classList.remove('show'));
-        
-        // Mobile sheet
         bind('fabBtn', 'click', openSheet);
         bind('closeSheetBtn', 'click', closeSheet);
         bind('sheetOverlay', 'click', closeSheet);
-        
-        // File uploads
-        bind('novelUploadDesktop', 'change', async (e) => { if(e.target.files.length) { const regex = prompt("Chapter regex:", chapterSplitRegex); if(regex) chapterSplitRegex = regex; const count = await importNovel(e.target.files[0], chapterSplitRegex); alert(`✅ ${count} chapters`); } });
-        bind('novelUploadMobile', 'change', async (e) => { if(e.target.files.length) { const regex = prompt("Chapter regex:", chapterSplitRegex); if(regex) chapterSplitRegex = regex; const count = await importNovel(e.target.files[0], chapterSplitRegex); alert(`✅ ${count} chapters`); closeSheet(); } });
-        
-        // Clean white bg
+        bind('prevChapterBtnDesktop', 'click', async () => { if(chapters.length && currentChapterIdx>0) { currentChapterIdx--; await renderCurrentChapter(false); } });
+        bind('prevChapterBtnMobile', 'click', async () => { if(chapters.length && currentChapterIdx>0) { currentChapterIdx--; await renderCurrentChapter(false); closeSheet(); } });
+        bind('nextChapterBtnDesktop', 'click', async () => { if(chapters.length && currentChapterIdx<chapters.length-1) { currentChapterIdx++; await renderCurrentChapter(false); } });
+        bind('nextChapterBtnMobile', 'click', async () => { if(chapters.length && currentChapterIdx<chapters.length-1) { currentChapterIdx++; await renderCurrentChapter(false); closeSheet(); } });
+        bind('chapterSelectDesktop', 'change', async (e) => { currentChapterIdx = parseInt(e.target.value); await renderCurrentChapter(false); });
+        bind('chapterSelectMobile', 'change', async (e) => { currentChapterIdx = parseInt(e.target.value); await renderCurrentChapter(false); closeSheet(); });
+        bind('clearCacheBtnDesktop', 'click', clearAllCache);
+        bind('clearCacheBtnMobile', 'click', clearAllCache);
         bind('cleanWhiteBgBtnDesktop', 'click', toggleWhiteBgClean);
         bind('cleanWhiteBgBtnMobile', 'click', toggleWhiteBgClean);
         
-        // Chapter navigation
-        bind('prevChapterBtnDesktop', 'click', () => { if(chapters.length && currentChapterIdx>0) { currentChapterIdx--; renderCurrentChapter(false); } });
-        bind('prevChapterBtnMobile', 'click', () => { if(chapters.length && currentChapterIdx>0) { currentChapterIdx--; renderCurrentChapter(false); closeSheet(); } });
-        bind('nextChapterBtnDesktop', 'click', () => { if(chapters.length && currentChapterIdx<chapters.length-1) { currentChapterIdx++; renderCurrentChapter(false); } });
-        bind('nextChapterBtnMobile', 'click', () => { if(chapters.length && currentChapterIdx<chapters.length-1) { currentChapterIdx++; renderCurrentChapter(false); closeSheet(); } });
-        bind('chapterSelectDesktop', 'change', (e) => { currentChapterIdx = parseInt(e.target.value); renderCurrentChapter(false); });
-        bind('chapterSelectMobile', 'change', (e) => { currentChapterIdx = parseInt(e.target.value); renderCurrentChapter(false); closeSheet(); });
+        const handleUpload = async (e) => {
+            if (e.target.files.length) {
+                const regex = prompt("Chapter regex (leave empty for default):", chapterSplitRegex);
+                if (regex !== null && regex.trim()) chapterSplitRegex = regex;
+                try {
+                    await importNovel(e.target.files[0], chapterSplitRegex);
+                } catch(err) { showToast(`Error: ${err.message}`); }
+                e.target.value = '';
+            }
+        };
+        bind('novelUploadDesktop', 'change', handleUpload);
+        bind('novelUploadMobile', 'change', (e) => { handleUpload(e); closeSheet(); });
         
-        // Clear cache
-        bind('clearCacheBtnDesktop', 'click', clearCache);
-        bind('clearCacheBtnMobile', 'click', clearCache);
-        
-        // Glossary modal
         const modal = document.getElementById('glossaryModal');
         bind('glossaryModalBtnDesktop', 'click', () => { renderGlossaryUI(); modal.style.display = 'flex'; });
         bind('glossaryModalBtnMobile', 'click', () => { renderGlossaryUI(); modal.style.display = 'flex'; closeSheet(); });
@@ -1116,7 +923,6 @@ OR text: word=replacement (one per line)'></textarea>
         bind('jsonFileUpload', 'change', (e) => { if(e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => importJson(ev.target.result); reader.readAsText(e.target.files[0]); e.target.value = ''; } });
         bind('txtFileUpload', 'change', (e) => { if(e.target.files[0]) { const reader = new FileReader(); reader.onload = (ev) => importTextPairs(ev.target.result); reader.readAsText(e.target.files[0]); e.target.value = ''; } });
         
-        // Close dialog when clicking outside
         document.getElementById('splitDialog').addEventListener('click', (e) => {
             if (e.target === document.getElementById('splitDialog')) {
                 document.getElementById('splitDialog').classList.remove('show');
