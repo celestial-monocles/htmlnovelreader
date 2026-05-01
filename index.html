@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=yes, viewport-fit=cover">
-    <title>Novel Reader | Large HTML Files | Bookmark Restore</title>
+    <title>Novel Reader | HTML | Dark Mode Fixed | Bookmark Restore</title>
     <style>
         * {
             box-sizing: border-box;
@@ -84,6 +84,48 @@
             font-size: 1.05rem;
             line-height: 1.7;
             word-wrap: break-word;
+        }
+        
+        /* DARK MODE TEXT COLOR FIX - regular text becomes white, colored elements keep their colors */
+        body.dark #reader-content {
+            color: #ffffff !important;
+        }
+        
+        /* Make all text white by default in dark mode */
+        body.dark #reader-content * {
+            color: #ffffff !important;
+        }
+        
+        /* BUT preserve elements that have specific colors (highlights, links, etc.) */
+        body.dark #reader-content span[style*="color"] {
+            color: inherit !important;
+        }
+        
+        body.dark #reader-content .highlight,
+        body.dark #reader-content mark,
+        body.dark #reader-content em,
+        body.dark #reader-content strong {
+            color: inherit !important;
+        }
+        
+        /* Special handling for colored spans - keep their original color */
+        body.dark #reader-content [style*="color:"] {
+            color: inherit !important;
+        }
+        
+        /* Headings in dark mode */
+        body.dark #reader-content h1,
+        body.dark #reader-content h2,
+        body.dark #reader-content h3,
+        body.dark #reader-content h4,
+        body.dark #reader-content h5,
+        body.dark #reader-content h6 {
+            color: #ffd93d !important;
+        }
+        
+        /* Links in dark mode */
+        body.dark #reader-content a {
+            color: #6c5ce7 !important;
         }
         
         /* Desktop Toolbar */
@@ -430,6 +472,8 @@
         localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
         const btns = document.querySelectorAll('#darkModeBtnDesktop, #darkModeBtnMobile');
         btns.forEach(btn => { if(btn) btn.innerHTML = isDark ? '☀️ Light' : '🌙 Dark'; });
+        // Force re-render to apply dark mode colors
+        if (chapters.length) renderCurrentChapter(true);
     }
     
     function loadDarkModePreference() {
@@ -641,7 +685,11 @@
             stylesToUse = stylesToUse.replace(/background-color\s*:\s*(white|#fff|#ffffff|#FFFFFF|rgb\(\s*255\s*,\s*255\s*,\s*255\s*\))\s*;?\s*/gi, '');
         }
         
-        document.getElementById('reader-content').innerHTML = `<style>${stylesToUse}</style><div class="novel-chapter-content">${contentWithGlossary}</div>`;
+        // In dark mode, we also need to ensure the content container has white text
+        const isDarkMode = document.body.classList.contains('dark');
+        const darkModeStyle = isDarkMode ? '<style>#reader-content, #reader-content * { color: #ffffff !important; } #reader-content h1, #reader-content h2, #reader-content h3, #reader-content h4, #reader-content h5, #reader-content h6 { color: #ffd93d !important; } #reader-content a { color: #6c5ce7 !important; }</style>' : '';
+        
+        document.getElementById('reader-content').innerHTML = darkModeStyle + `<style>${stylesToUse}</style><div class="novel-chapter-content">${contentWithGlossary}</div>`;
         updateSelectors();
         
         if (restoreScroll && currentBookmark && currentBookmark.chapterIdx === currentChapterIdx && currentBookmark.scrollY) {
